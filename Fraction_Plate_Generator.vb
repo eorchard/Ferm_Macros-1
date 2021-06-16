@@ -1,3 +1,9 @@
+'Makes string comparisons case insensitive
+
+Option Compare Text
+
+ 
+
 'Quickly generates a plate in our typical format
 
 Sub Quick_Populate()
@@ -11,6 +17,10 @@ Sub Quick_Populate()
     Dim counter As Integer
 
     Dim firstRow As Integer
+
+    Dim emptyRightTwo As Boolean
+
+    Dim exitFor As Boolean
 
     counter = 0
 
@@ -26,11 +36,11 @@ Sub Quick_Populate()
 
     numberOfTimepoints = Range("Y11").Value
 
+    emptyRightTwo = IIf(Range("Y26").Value = "Yes", True, False)
+
    
 
-    'Clear pre-existing data
-
-    Range("C2:E200").ClearContents
+    Call Clear_Table
 
    
 
@@ -44,7 +54,17 @@ Sub Quick_Populate()
 
            'If counter reaches 12th column, wrap around
 
-            If counter = 12 And wrapped = False Then
+            If counter = 12 And Not wrapped Then
+
+                firstRow = firstRow + 3
+
+                counter = 0
+
+                wrapped = True
+
+               
+
+            ElseIf counter = 10 And Not wrapped And emptyRightTwo Then
 
                 firstRow = firstRow + 3
 
@@ -56,9 +76,15 @@ Sub Quick_Populate()
 
             'Error notification for excessive samples
 
-            ElseIf counter = 12 And wrapped = True Then
+            ElseIf (counter = 12 And wrapped) Or (counter = 10 And wrapped And emptyRightTwo) Then
 
                 MsgBox "Plate Overflow! Please adjust Quick Populate settings."
+
+                'Break loop
+
+                exitFor = True
+
+                Exit For
 
             End If
 
@@ -86,11 +112,11 @@ Sub Quick_Populate()
 
             'Color
 
-            Range("E" & (firstRow + (8 * counter))).Value = Range("Y" & (17 + x)).Value
+            Range("E" & (firstRow + (8 * counter))).Value = Range("Y" & (18 + x)).Value
 
-            Range("E" & (firstRow + 1 + (8 * counter))).Value = Range("Y" & (17 + x)).Value
+            Range("E" & (firstRow + 1 + (8 * counter))).Value = Range("Y" & (18 + x)).Value
 
-            Range("E" & (firstRow + 2 + (8 * counter))).Value = Range("Y" & (17 + x)).Value
+            Range("E" & (firstRow + 2 + (8 * counter))).Value = Range("Y" & (18 + x)).Value
 
            
 
@@ -98,21 +124,17 @@ Sub Quick_Populate()
 
         Next
 
+        'Break loop
+
+        If exitFor Then Exit For
+
     Next
 
    
 
     'Wrapped state will determine whether CFB ends up on Row D or Row G
 
-    If wrapped = True Then
-
-        firstRow = 8
-
-    Else
-
-        firstRow = 5
-
-    End If
+    firstRow = IIf(wrapped, 8, 5)
 
    
 
@@ -138,9 +160,9 @@ Sub Quick_Populate()
 
         'Color
 
-        Range("E" & firstRow + (8 * x)).Value = Range("Y" & (17 + x)).Value
+        Range("E" & firstRow + (8 * x)).Value = Range("Y" & (18 + x)).Value
 
-        Range("E" & firstRow + 1 + (8 * x)).Value = Range("Y" & (17 + x)).Value
+        Range("E" & firstRow + 1 + (8 * x)).Value = Range("Y" & (18 + x)).Value
 
     Next
 
@@ -174,6 +196,8 @@ Call Clear_Plate
 
 'Absolute location of well A1, rest will be calculated relatively
 
+Set plateLocation = ActiveSheet.Shapes("Plate Map")
+
 A1_X = 397.5
 
 A1_Y = 60.75
@@ -186,7 +210,7 @@ With ActiveSheet.Shapes("Plate Map")
 
     .Left = 366
 
-    .Top = 0
+    .Top = 1.25
 
     .Height = 378.72
 
@@ -266,8 +290,6 @@ For i = 1 To 12
 
                 With .TextFrame
 
-                    .Characters.Text = dasgipArray(counter) & vbNewLine & timepointArray(counter)
-
                     .MarginLeft = 0
 
                     .MarginRight = 0
@@ -276,7 +298,11 @@ For i = 1 To 12
 
                     .MarginBottom = 0
 
+                    .Characters.Text = dasgipArray(counter) & vbNewLine & timepointArray(counter)
+
                     .Characters.Font.Size = 9
+
+                    .Characters.Font.Bold = True
 
                     .HorizontalAlignment = xlHAlignCenter
 
@@ -293,5 +319,15 @@ For i = 1 To 12
 Next
 
    
+
+End Sub
+
+ 
+
+'Clear pre-existing data
+
+Sub Clear_Table()
+
+    Range("C2:E200").ClearContents
 
 End Sub
