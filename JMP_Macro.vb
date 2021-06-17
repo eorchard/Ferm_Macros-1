@@ -1,5 +1,99 @@
 
 
+'Function counts number of DO spikes based on Pump A totalizer values
+
+Function countDOSpikes(lastRow, sourceSheet) As Integer
+
+    Dim numberOfSpikes As Integer
+
+    Dim highTotalizer As Double
+
+    Dim potentialHighTotalizer As Double
+
+    Dim timeArray As Variant
+
+ 
+
+    numberOfSpikes = 0
+
+    highTotalizer = 0
+
+    potentialHighTotalizer = 0
+
+ 
+
+    For Each cell In sourceSheet.Range("AF2:AF" & lastRow)
+
+        'Skip empty cells
+
+        If cell.Value <> "" Then
+
+            'Identifying DO spikes will require at least a 10mL increase
+
+            If (cell.Value > highTotalizer + 10) Then
+
+                'potentialHighTotalizer becomes highTotalizer if new totalizer value appears in raw data 3x consecutively
+
+                'This prevents the macro from identifying a gradual increase as multiple spikes
+
+                If (cell.Value = potentialHighTotalizer) And (counter = 3) Then
+
+                    highTotalizer = potentialHighTotalizer
+
+                    counter = 0
+
+                    numberOfSpikes = numberOfSpikes + 1
+
+                   
+
+                ElseIf (cell.Value = potentialHighTotalizer) And (counter < 3) Then
+
+                    counter = counter + 1
+
+                   
+
+                ElseIf cell.Value <> potentialHighTotalizer Then
+
+                    potentialHighTotalizer = cell.Value
+
+                End If
+
+            End If
+
+        End If
+
+    Next
+
+   
+
+    countDOSpikes = numberOfSpikes
+
+End Function
+
+ 
+
+'Sub adds DG Column to raw data
+
+Private Sub addDGColumn(DG_Unit, vesselNumber)
+
+    Columns("C:C").Select
+
+    Selection.End(xlDown).Select
+
+    Range("A2:A" & ActiveCell.Row - 1).EntireRow.Delete
+
+    ActiveWindow.ScrollRow = 1
+
+    Range("C1").EntireColumn.Insert
+
+    Range("C1").Value = "DG"
+
+    Range("C2:C" & Range("B2").End(xlDown).Row).Value = DG_Unit & vesselNumber
+
+End Sub
+
+ 
+
 'Function determines number of DG units based on number of data sheets
 
 Function countDataSheets(countFromWorkbook) As Integer
@@ -42,19 +136,7 @@ Private Sub compressData(numberOfDataSheets, DG_Unit)
 
         If Range("E1").Value Like "*" & i & "*" Then
 
-            Columns("C:C").Select
-
-            Selection.End(xlDown).Select
-
-            Range("A2:A" & ActiveCell.Row - 1).EntireRow.Delete
-
-            ActiveWindow.ScrollRow = 1
-
-            Range("C1").EntireColumn.Insert
-
-            Range("C1").Value = "DG"
-
-            Range("C2:C" & Range("B2").End(xlDown).Row).Value = DG_Unit & i
+            Call addDGColumn(DG_Unit, i)
 
            
 
@@ -66,19 +148,7 @@ Private Sub compressData(numberOfDataSheets, DG_Unit)
 
                 If Range("E1").Value Like "*" & j & "*" Then
 
-                    Columns("C:C").Select
-
-                    Selection.End(xlDown).Select
-
-                    Range("A2:A" & ActiveCell.Row - 1).EntireRow.Delete
-
-                    ActiveWindow.ScrollRow = 1
-
-                    Range("C1").EntireColumn.Insert
-
-                    Range("C1").Value = "DG"
-
-                    Range("C2:C" & Range("B2").End(xlDown).Row).Value = DG_Unit & j
+                    Call addDGColumn(DG_Unit, j)
 
                 End If
 
@@ -137,6 +207,8 @@ Private Sub importRawData()
     Dim rawDataWorkbook As Workbook
 
     Dim targetWorkbook As Workbook
+
+    Dim numberOfSpikes As Integer
 
     Dim DG_Unit As String
 
@@ -214,7 +286,21 @@ Private Sub importRawData()
 
        
 
+        'DG3 and DG5 raw data export contain 6 additional columns than DG4, remove these columns so all DG units are formatted the same way
+
+        If Application.WorksheetFunction.CountA(sourceSheet.Range("AN:AN")) <> 0 Then
+
+            sourceSheet.Range("J:J,P:P,R:R,T:T,AL:AL,AN:AN").Delete
+
+        End If
+
+       
+
         targetSheet.Range("A2", "AI" & lastRow).Value = sourceSheet.Range("A2", "AI" & lastRow).Value
+
+       
+
+        numberOfSpikes = countDOSpikes(lastRow, sourceSheet)
 
     Next
 
