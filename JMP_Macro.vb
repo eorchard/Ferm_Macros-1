@@ -3,7 +3,6 @@ Function countDOSpikes(lastRow, sourceSheet) As Integer
     Dim numberOfSpikes As Integer
     Dim highTotalizer As Double
     Dim potentialHighTotalizer As Double
-    Dim timeArray As Variant
  
     numberOfSpikes = 0
     highTotalizer = 0
@@ -21,16 +20,18 @@ Function countDOSpikes(lastRow, sourceSheet) As Integer
                     counter = 0
                     numberOfSpikes = numberOfSpikes + 1
                    
+                'Increment counter until 3
                 ElseIf (cell.Value = potentialHighTotalizer) And (counter < 3) Then
                     counter = counter + 1
                    
+                'New high value
                 ElseIf cell.Value <> potentialHighTotalizer Then
                     potentialHighTotalizer = cell.Value
+                    counter = counter + 1
                 End If
             End If
         End If
     Next
-   
     countDOSpikes = numberOfSpikes
 End Function
  
