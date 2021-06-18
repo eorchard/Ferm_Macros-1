@@ -11,7 +11,7 @@ Sub Quick_Populate()
     Dim emptyRightTwoColumns As Boolean
     Dim exitFor As Boolean
     counter = 0
-    firstRow = 2
+    firstRow = 2 'First row of the table
  
     'Collect user input
     numberOfVessels = Range("Y9").Value
@@ -25,12 +25,8 @@ Sub Quick_Populate()
     For x = 0 To numberOfVessels - 1
         For y = 0 To numberOfTimepoints - 1
             If Not Wrapped Then
-               'If counter reaches 12th column, wrap around
-                If counter = 12 Then
-                    firstRow = firstRow + 3
-                    counter = 0
-                    wrapped = True
-                ElseIf counter = 10 And emptyRightTwoColumns Then
+               'Wrap plate to fourth row
+                If (counter = 12) Or (counter = 10 And emptyRightTwoColumns) Then
                     firstRow = firstRow + 3
                     counter = 0
                     wrapped = True
@@ -41,24 +37,14 @@ Sub Quick_Populate()
                     'Break loop
                     exitFor = True
                     Exit For
-            End If    
-        End If
-           
-            'Vessel
-            Range("C" & (firstRow + (8 * counter))).Value = DG_Unit & x + 1
-            Range("C" & (firstRow + 1 + (8 * counter))).Value = DG_Unit & x + 1
-            Range("C" & (firstRow + 2 + (8 * counter))).Value = DG_Unit & x + 1
-           
-            'Timepoint
-            Range("D" & (firstRow + (8 * counter))).Value = "I" & Range("Y" & (12 + y)).Value
-            Range("D" & (firstRow + 1 + (8 * counter))).Value = "I" & Range("Y" & (12 + y)).Value
-            Range("D" & (firstRow + 2 + (8 * counter))).Value = "I" & Range("Y" & (12 + y)).Value
-           
-            'Color
-            Range("E" & (firstRow + (8 * counter))).Value = Range("Y" & (18 + x)).Value
-            Range("E" & (firstRow + 1 + (8 * counter))).Value = Range("Y" & (18 + x)).Value
-            Range("E" & (firstRow + 2 + (8 * counter))).Value = Range("Y" & (18 + x)).Value
-           
+                End If    
+            End If
+
+            For z = 0 to 2
+                Range("C" & (firstRow + z + (8 * counter))).Value = DG_Unit & x + 1 'Vessel
+                Range("D" & (firstRow + z + (8 * counter))).Value = "I" & Range("Y" & (12 + y)).Value 'Timepoint
+                Range("E" & (firstRow + z + (8 * counter))).Value = Range("Y" & (18 + x)).Value 'Color
+            Next
             counter = counter + 1
         Next
         'Break loop
@@ -70,17 +56,11 @@ Sub Quick_Populate()
    
     'Populate CFB
     For x = 0 To numberOfVessels - 1
-        'Vessel
-        Range("C" & firstRow + (8 * x)).Value = DG_Unit & x + 1
-        Range("C" & firstRow + 1 + (8 * x)).Value = DG_Unit & x + 1
-       
-        'Timepoint
-        Range("D" & firstRow + (8 * x)).Value = "CFB"
-        Range("D" & firstRow + 1 + (8 * x)).Value = "CFB"
-       
-        'Color
-        Range("E" & firstRow + (8 * x)).Value = Range("Y" & (18 + x)).Value
-        Range("E" & firstRow + 1 + (8 * x)).Value = Range("Y" & (18 + x)).Value
+        For y = 0 to 1
+            Range("C" & firstRow + y + (8 * x)).Value = DG_Unit & x + 1 'Vessel
+            Range("D" & firstRow + y + (8 * x)).Value = "CFB" 'Timepoint
+            Range("E" & firstRow + y + (8 * x)).Value = Range("Y" & (18 + x)).Value 'Color
+        Next
     Next
    
     Call Generate_Plate

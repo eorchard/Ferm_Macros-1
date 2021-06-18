@@ -27,7 +27,6 @@ Function countDOSpikes(lastRow, sourceSheet) As Integer
                 'New high value
                 ElseIf cell.Value <> potentialHighTotalizer Then
                     potentialHighTotalizer = cell.Value
-                    counter = counter + 1
                 End If
             End If
         End If
