@@ -1,14 +1,13 @@
 'Function counts number of DO spikes based on Pump A totalizer values
-Function countDOSpikes(lastRow, sourceSheet) As Integer
+Function countDOSpikes(lastRow, rawDataSheet) As Integer
     Dim numberOfSpikes As Integer
-    Dim highTotalizer As Double
-    Dim potentialHighTotalizer As Double
+    Dim highTotalizer, potentialHighTotalizer As Double
  
     numberOfSpikes = 0
     highTotalizer = 0
     potentialHighTotalizer = 0
  
-    For Each cell In sourceSheet.Range("AF2:AF" & lastRow)
+    For Each cell In rawDataSheet.Range("AF2:AF" & lastRow)
         'Skip empty cells
         If cell.Value <> "" Then
             'Identifying DO spikes will require at least a 10mL increase
@@ -47,7 +46,6 @@ End Sub
  
 'Function determines number of DG units based on number of data sheets
 Function countDataSheets(countFromWorkbook) As Integer
-    Dim i As Integer
     Dim xCount As Integer
    
     'Count number of sheets containing keyword 'Data'
@@ -98,12 +96,10 @@ End Sub
  
 'Function imports raw data file from DG units
 Private Sub importRawData()
-    Dim filter As String
-    Dim rawDataFilename As String
-    Dim rawDataWorkbook As Workbook
-    Dim targetWorkbook As Workbook
-    Dim numberOfSpikes As Integer
-    Dim DG_Unit As String
+    Dim filter, rawDataFilename, DG_Unit As String
+    Dim rawDataSheet, targetSheet As Worksheet
+    Dim rawDataWorkbook, targetWorkbook As Workbook
+    Dim numberOfSpikes, lastRow As Integer
    
     filter = "Text files (*.xlsx),*.xlsx"
     MsgBox "Please select the DASGIP raw data file", vbOKOnly
@@ -132,23 +128,20 @@ Private Sub importRawData()
    
     'Copy data from DG raw files to JMP Macro
     For i = 1 To numberOfDataSheets
-        Dim targetSheet As Worksheet
         Set targetSheet = targetWorkbook.Worksheets("Data" & i)
-        Dim sourceSheet As Worksheet
-        Set sourceSheet = rawDataWorkbook.Worksheets("Data" & i)
+        Set rawDataSheet = rawDataWorkbook.Worksheets("Data" & i)
        
         'Identify last row in order to extract the correct range
-        Dim lastRow As Long
         lastRow = Application.WorksheetFunction.CountA(Columns(1))
        
         'DG3 and DG5 raw data export contain 6 additional columns than DG4, remove these columns so all DG units are formatted the same way
-        If Application.WorksheetFunction.CountA(sourceSheet.Range("AN:AN")) <> 0 Then
-            sourceSheet.Range("J:J,P:P,R:R,T:T,AL:AL,AN:AN").Delete
+        If Application.WorksheetFunction.CountA(rawDataSheet.Range("AN:AN")) <> 0 Then
+            rawDataSheet.Range("J:J,P:P,R:R,T:T,AL:AL,AN:AN").Delete
         End If
        
-        targetSheet.Range("A2", "AI" & lastRow).Value = sourceSheet.Range("A2", "AI" & lastRow).Value
+        targetSheet.Range("A2", "AI" & lastRow).Value = rawDataSheet.Range("A2", "AI" & lastRow).Value
        
-        numberOfSpikes = countDOSpikes(lastRow, sourceSheet)
+        numberOfSpikes = countDOSpikes(lastRow, rawDataSheet)
     Next
    
     'Close raw data file

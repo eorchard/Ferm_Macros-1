@@ -3,13 +3,9 @@ Option Compare Text
  
 'Quickly generates a plate in our typical format
 Sub Quick_Populate()
-    Dim numberOfVessels As Integer
-    Dim counter As Integer
-    Dim firstRow As Integer
+    Dim numberOfVessels, counter, firstRow As Integer
     Dim DG_Unit As String
-    Dim wrapped As Boolean
-    Dim emptyRightTwoColumns As Boolean
-    Dim exitFor As Boolean
+    Dim wrapped, emptyRightTwoColumns, exitFor As Boolean
     counter = 0
     firstRow = 2 'First row of the table
  
@@ -34,7 +30,7 @@ Sub Quick_Populate()
             Else
                 ElseIf (counter = 12) Or (counter = 10 And emptyRightTwoColumns) Then
                     MsgBox "Plate Overflow! Please adjust Quick Populate settings."
-                    'Break loop
+                    'Break inner loop if overflowed
                     exitFor = True
                     Exit For
                 End If    
@@ -47,7 +43,7 @@ Sub Quick_Populate()
             Next
             counter = counter + 1
         Next
-        'Break loop
+        'Break outer loop if overflowed
         If exitFor Then Exit For
     Next
    
@@ -69,14 +65,9 @@ End Sub
  
 Sub Generate_Plate()
     Dim ovalShape As Shape
-    Dim A1_X As Double
-    Dim A1_Y As Double
-    Dim colorArray(96) As String
-    Dim timepointArray(96) As String
-    Dim dasgipArray(96) As String
-    Dim color As String
+    Dim A1_X, A1_Y As Double
+    Dim color, colorArray(96), timePointArray(96), dasgipArray(96) As String
     Dim counter As Integer
-    Dim x As Integer
      
     'Clear plate
     Call Clear_Plate
