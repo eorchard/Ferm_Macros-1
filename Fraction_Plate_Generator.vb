@@ -14,21 +14,23 @@ Sub Quick_Populate()
     numberOfTimepoints = Range("Y11").Value
     emptyRightTwoColumns = IIf(Range("Y26").Value = "Yes", True, False)
    
+    'Clear table
     Call Clear_Table
    
+    'Loop over vessels and timepoints
     For x = 0 To numberOfVessels - 1
         For y = 0 To numberOfTimepoints - 1
 
             'Check if plate needs to be wrapped to fourth row
-            If Not Wrapped Then
-               'Wrap plate to fourth row
-                If (counter = 12) Or (counter = 10 And emptyRightTwoColumns) Then
+            'Wrap plate to fourth row
+            If (counter = 12) Or (counter = 10 And emptyRightTwoColumns) Then
+                If Not Wrapped Then
                     firstRow = firstRow + 3
                     counter = 0
                     wrapped = True
+
                 'Error notification for excessive samples
-            Else
-                ElseIf (counter = 12) Or (counter = 10 And emptyRightTwoColumns) Then
+                Else
                     MsgBox "Plate Overflow! Please adjust Quick Populate settings."
                     'Break inner loop if overflowed
                     exitFor = True
@@ -38,9 +40,12 @@ Sub Quick_Populate()
 
             'Populate timepoints
             For z = 0 to 2
-                Range("C" & (firstRow + z + (8 * counter))).Value = DG_Unit & x + 1 'Vessel
-                Range("D" & (firstRow + z + (8 * counter))).Value = "I" & Range("Y" & (12 + y)).Value 'Timepoint
-                Range("E" & (firstRow + z + (8 * counter))).Value = Range("Y" & (18 + x)).Value 'Color
+                'Vessel
+                Range("C" & (firstRow + z + (8 * counter))).Value = DG_Unit & x + 1
+                'Timepoint
+                Range("D" & (firstRow + z + (8 * counter))).Value = "I" & Range("Y" & (12 + y)).Value
+                'Color
+                Range("E" & (firstRow + z + (8 * counter))).Value = Range("Y" & (18 + x)).Value 
             Next
             counter = counter + 1
         Next
@@ -54,9 +59,12 @@ Sub Quick_Populate()
     'Populate CFB
     For x = 0 To numberOfVessels - 1
         For y = 0 to 1
-            Range("C" & firstRow + y + (8 * x)).Value = DG_Unit & x + 1 'Vessel
-            Range("D" & firstRow + y + (8 * x)).Value = "CFB" 'Timepoint
-            Range("E" & firstRow + y + (8 * x)).Value = Range("Y" & (18 + x)).Value 'Color
+            'Vessel
+            Range("C" & firstRow + y + (8 * x)).Value = DG_Unit & x + 1
+            'Timepoint
+            Range("D" & firstRow + y + (8 * x)).Value = "CFB" 
+            'Color
+            Range("E" & firstRow + y + (8 * x)).Value = Range("Y" & (18 + x)).Value
         Next
     Next
    
@@ -96,6 +104,7 @@ Sub Generate_Plate()
     'Populate wells
     counter = 1
      
+    'Loop over 96-well plate
     For i = 1 To 12
         For j = 1 To 8
             color = colorArray(counter)
