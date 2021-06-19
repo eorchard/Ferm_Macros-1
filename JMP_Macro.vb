@@ -3,28 +3,27 @@ Function countDOSpikes(lastRow, rawDataSheet) As Integer
     Dim numberOfSpikes As Integer
     Dim highTotalizer As Double, potentialHighTotalizer As Double
  
-    numberOfSpikes = 0
-    highTotalizer = 0
-    potentialHighTotalizer = 0
- 
     For Each cell In rawDataSheet.Range("AF2:AF" & lastRow)
         'Skip empty cells
-        If cell.Value <> "" Then
+        If (cell.Value <> "") Then
+
             'Identifying DO spikes will require at least a 10mL increase
             If (cell.Value > highTotalizer + 10) Then
+
                 'potentialHighTotalizer becomes highTotalizer if new totalizer value appears in raw data 3x consecutively
-                'This prevents the macro from identifying a gradual increase as multiple spikes
-                If (cell.Value = potentialHighTotalizer) And (counter = 3) Then
-                    highTotalizer = potentialHighTotalizer
-                    counter = 0
-                    numberOfSpikes = numberOfSpikes + 1
-                   
-                'Increment counter until 3
-                ElseIf (cell.Value = potentialHighTotalizer) And (counter < 3) Then
-                    counter = counter + 1
-                   
+                If (cell.Value = potentialHighTotalizer) Then
+                    If counter = 3 Then
+                        highTotalizer = potentialHighTotalizer
+                        counter = 0
+                        numberOfSpikes = numberOfSpikes + 1
+
+                    'Increment counter until 3
+                    Else
+                        counter = counter + 1
+                    End If
+
                 'New high value
-                ElseIf cell.Value <> potentialHighTotalizer Then
+                Else
                     potentialHighTotalizer = cell.Value
                 End If
             End If
@@ -104,6 +103,11 @@ Private Sub importRawData()
     filter = "Text files (*.xlsx),*.xlsx"
     MsgBox "Please select the DASGIP raw data file", vbOKOnly
    
+    'Clear pre-existing data
+    For i = 1 To 8
+        Worksheets(i).Range("A2:AI" & Rows.Count).ClearContents
+    Next
+   
     'JMP Macro workbook is the target
     Set targetWorkbook = Application.ThisWorkbook
    
@@ -153,25 +157,14 @@ Private Sub importRawData()
     'Convert Duration and InoculationTime to "hh:mm:ss" format
     lastRow = Application.WorksheetFunction.CountA(Columns(1))
    
-    'Duration
-    For Each cell In Range("B2:B" & lastRow)
+    'Duration and InoculationTime conversion
+    For Each cell In Range("B2:B" & lastRow, "D2:D" & lastRow)
         cell.Value = "=TEXT(""" & cell.Value & """, ""hh:mm:ss"")"
     Next cell
-   
-    'InoculationTime
-    For Each cell In Range("D2:D" & lastRow)
-        cell.Value = "=TEXT(""" & cell.Value & """, ""hh:mm:ss"")"
-    Next cell
-   
 End Sub
  
 'Main macro container
 Sub Run_JMP_Macro()
-    'Clear pre-existing data
-    For i = 1 To 8
-        Worksheets(i).Range("A2:AI" & Rows.Count).ClearContents
-    Next
-   
     'Import DG raw data file
     Call importRawData
 End Sub
