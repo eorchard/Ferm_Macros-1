@@ -1,7 +1,7 @@
 'Function counts number of DO spikes based on Pump A totalizer values
 Function countDOSpikes(lastRow, rawDataSheet) As Integer
     Dim numberOfSpikes As Integer
-    Dim highTotalizer, potentialHighTotalizer As Double
+    Dim highTotalizer As Double, potentialHighTotalizer As Double
  
     numberOfSpikes = 0
     highTotalizer = 0
@@ -96,10 +96,10 @@ End Sub
  
 'Function imports raw data file from DG units
 Private Sub importRawData()
-    Dim filter, rawDataFilename, DG_Unit As String
-    Dim rawDataSheet, targetSheet As Worksheet
-    Dim rawDataWorkbook, targetWorkbook As Workbook
-    Dim numberOfSpikes, lastRow As Integer
+    Dim filter As String, rawDataFilename As String, DG_Unit As String
+    Dim rawDataSheet As Workbook, targetSheet As Worksheet
+    Dim rawDataWorkbook As Workbook, targetWorkbook As Workbook
+    Dim numberOfSpikes As Integer, lastRow As Integer
    
     filter = "Text files (*.xlsx),*.xlsx"
     MsgBox "Please select the DASGIP raw data file", vbOKOnly

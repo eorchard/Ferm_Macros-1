@@ -3,10 +3,9 @@ Option Compare Text
  
 'Quickly generates a plate in our typical format
 Sub Quick_Populate()
-    Dim numberOfVessels, counter, firstRow As Integer
+    Dim numberOfVessels As Integer, counter As Integer, firstRow As Integer
     Dim DG_Unit As String
-    Dim wrapped, emptyRightTwoColumns, exitFor As Boolean
-    counter = 0
+    Dim wrapped As Boolean, emptyRightTwoColumns As Boolean, exitFor As Boolean
     firstRow = 2 'First row of the table
  
     'Collect user input
@@ -17,9 +16,10 @@ Sub Quick_Populate()
    
     Call Clear_Table
    
-    'Populate Timepoints
     For x = 0 To numberOfVessels - 1
         For y = 0 To numberOfTimepoints - 1
+
+            'Check if plate needs to be wrapped to fourth row
             If Not Wrapped Then
                'Wrap plate to fourth row
                 If (counter = 12) Or (counter = 10 And emptyRightTwoColumns) Then
@@ -36,6 +36,7 @@ Sub Quick_Populate()
                 End If    
             End If
 
+            'Populate timepoints
             For z = 0 to 2
                 Range("C" & (firstRow + z + (8 * counter))).Value = DG_Unit & x + 1 'Vessel
                 Range("D" & (firstRow + z + (8 * counter))).Value = "I" & Range("Y" & (12 + y)).Value 'Timepoint
@@ -65,8 +66,8 @@ End Sub
  
 Sub Generate_Plate()
     Dim ovalShape As Shape
-    Dim A1_X, A1_Y As Double
-    Dim color, colorArray(96), timePointArray(96), dasgipArray(96) As String
+    Dim A1_X As Double, A1_Y As Double
+    Dim color as String, colorArray(96) As String, timePointArray(96) As String, dasgipArray(96) As String
     Dim counter As Integer
      
     'Clear plate
@@ -118,7 +119,7 @@ Sub Generate_Plate()
                         .MarginTop = 0
                         .MarginBottom = 0
                         .Characters.Text = dasgipArray(counter) & vbNewLine & timepointArray(counter)
-                        .Characters.Font.Size = 9.5
+                        .Characters.Font.Size = 9
                         .Characters.Font.Bold = True
                         .HorizontalAlignment = xlHAlignCenter
                     End With
