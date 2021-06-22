@@ -22,7 +22,6 @@ Sub Quick_Populate()
         For y = 0 To numberOfTimepoints - 1
 
             'Check if plate needs to be wrapped to fourth row
-            'Wrap plate to fourth row
             If (counter = 12) Or (counter = 10 And emptyRightTwoColumns) Then
                 If Not Wrapped Then
                     firstRow = firstRow + 3
