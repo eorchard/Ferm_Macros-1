@@ -48,13 +48,26 @@ if p isnot nothing then
         end if
 
       case 4
-       if .DOPV > DO_low_trigger then
-          .phase = .phase + 1
-          .LogMessage("Entering phase: Approaching DO high trigger of " & DO_high_trigger &"%")
+        if .DOPV > DO_low_trigger then
+
+            'Identify Citric Acid spike if DO > Low Trigger and pH > 7
+            if (.ExtA < 1) And (.PHPV > 7) then
+                .phase = .phase - 4
+                .PumpAActive = 1
+                .LogMessage("Turning on Pump A following Citric Acid spike")
+                .LogMessage("Entering phase: Waiting for DO falling under " & DO_low_trigger & "%")
+
+            'Start slope calculation once DO > Low Trigger
+            else if (.ExtA >= 1) then
+                .phase = .phase + 1
+                .LogMessage("Entering phase: Approaching DO high trigger of " & DO_high_trigger &"%")
+            end if
         end if
 
       case 5
+        'Slope calculation
         DO_Slope = ((DO_high_trigger/100)-(DO_low_trigger/100))/(.Runtime_H - .PhaseStart_H)
+
         if .DOPV > DO_high_trigger then
           if ((DO_Slope > Minimum_Slope_For_Feed) Or (.ExtA < 1))
             .phase = .phase + 1
@@ -76,18 +89,10 @@ if p isnot nothing then
           .LogMessage("Entering phase: Waiting for DO > "& DO_high_trigger &"%")
         end if 
         if .Runtime_H - .PhaseStart_H > Wait_Before_Feed_Start then
-          if .ExtA < 1 then
-            .phase = .phase - 4
-            .PumpAActive = 1
-            .LogMessage("Turning on Pump A following Citric Acid spike")
-            .LogMessage("Entering phase: Waiting for DO falling under " & DO_low_trigger & "%")
-          else
-            .phase = .phase + 1
+            phase = .phase + 1
             .LogMessage("Entering phase: Starting feeds A")
             .FASP = Feed_Rate
-          end if
-          .ExtA = .ExtA + 1     'this indicates number of DO spikes, currently used to identify Citric Acid spike but may be useful in a future script
-                  .LogMessage("DO Spikes: " & .ExtA)
+            .ExtA = .ExtA + 1     'this indicates number of DO spikes, currently used to identify Citric Acid spike but may be useful in a future script
         end if
 
       case 7
