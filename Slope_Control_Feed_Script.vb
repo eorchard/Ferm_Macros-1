@@ -69,7 +69,7 @@ if p isnot nothing then
         DO_Slope = ((DO_high_trigger/100)-(DO_low_trigger/100))/(.Runtime_H - .PhaseStart_H)
 
         if .DOPV > DO_high_trigger then
-          if ((DO_Slope > Minimum_Slope_For_Feed) Or (.ExtA < 1))
+          if ((DO_Slope > Minimum_Slope_For_Feed) Or (.ExtA < 1)) then
             .phase = .phase + 1
             .LogMessage("Entering phase: Waiting for high DO longer than " & Wait_Before_Feed_Start & "h")
           else
