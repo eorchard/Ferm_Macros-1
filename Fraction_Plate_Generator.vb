@@ -5,14 +5,13 @@ Option Compare Text
 Sub Quick_Populate()
     Dim numberOfVessels As Integer, counter As Integer, firstRow As Integer
     Dim DG_Unit As String
-    Dim wrapped As Boolean, emptyRightTwoColumns As Boolean, exitFor As Boolean
+    Dim wrapped As Boolean, exitFor As Boolean
     firstRow = 2 'First row of the table
  
     'Collect user input
     numberOfVessels = Range("Y9").Value
     DG_Unit = Range("Y10").Value
     numberOfTimepoints = Range("Y11").Value
-    emptyRightTwoColumns = IIf(Range("Y26").Value = "Yes", True, False)
    
     'Clear table
     Call Clear_Table
@@ -22,7 +21,7 @@ Sub Quick_Populate()
         For y = 0 To numberOfTimepoints - 1
 
             'Check if plate needs to be wrapped to fourth row
-            If (counter = 12) Or (counter = 10 And emptyRightTwoColumns) Then
+            If (counter = 12) Or (counter = 10 And isEmptyRightTwoColumnsChecked.Value) Then
                 If Not Wrapped Then
                     firstRow = firstRow + 3
                     counter = 0
