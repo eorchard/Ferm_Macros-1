@@ -89,7 +89,7 @@ if p isnot nothing then
           .LogMessage("Entering phase: Waiting for DO > "& DO_high_trigger &"%")
         end if 
         if .Runtime_H - .PhaseStart_H > Wait_Before_Feed_Start then
-            phase = .phase + 1
+            .phase = .phase + 1
             .LogMessage("Entering phase: Starting feeds A")
             .FASP = Feed_Rate
             .ExtA = .ExtA + 1     'this indicates number of DO spikes, currently used to identify Citric Acid spike but may be useful in a future script
