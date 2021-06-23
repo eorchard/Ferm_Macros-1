@@ -55,7 +55,10 @@ if p isnot nothing then
             'Identify Citric Acid spike if DO > Low Trigger and pH > 7
             if (.ExtA < 1) And (.PHPV > 7) then
                 .phase = .phase - 4
+
+                'Turn on Pump A if needed
                 .PumpAActive = 1
+
                 .LogMessage("Turning on Pump A following Citric Acid spike")
                 .LogMessage("Entering phase: Waiting for DO falling under " & DO_low_trigger & "%")
 
