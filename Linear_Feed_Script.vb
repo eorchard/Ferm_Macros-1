@@ -55,17 +55,23 @@ if p isnot nothing then
         end if
 
       case 5
+        'Slope calculation
         DO_Slope = ((DO_high_trigger/100)-(DO_low_trigger/100))/(.Runtime_H - .PhaseStart_H)
         if .DOPV > DO_high_trigger then
+
+          'Check for minimum slope 
           if ((DO_Slope > Minimum_Slope_For_Feed) Or (.ExtA < 1))
             .phase = .phase + 1
             .LogMessage("Entering phase: Waiting for high DO longer than " & Wait_Before_Feed_Start & "h")
+
           else
             .phase = .phase - 3
             .LogMessage("Slope of " & DO_Slope & " doesn't meet minimum slope of " & Minimum_Slope_For_Feed)
             .LogMessage("Entering phase: Waiting for DO falling under " & DO_low_trigger & "%")
           end if
         end if
+
+        'Slope falls back below low trigger
         if .DOPV < DO_low_trigger then
           .phase = .phase - 2
           .LogMessage("Entering phase: Waiting for DO > "& DO_high_trigger &"%")
