@@ -13,6 +13,7 @@
   dim Feed_Rate as double = 200                     '[ml/h] default 200mL/hr
   dim Feed_Duration as double                       '[h] feed duration to be calculated during script
   dim Feed_Duration_timebased as double = 2/60      '[h] for use in time based feeding rather than bolus
+  dim Time_Since_Phase_Start as double = p.Runtime_H - p.PhaseStart_H 
   dim feed_density as double = 1008                 '[g/L], typically 1008 for 80% glycerol
   dim Minimum_Slope_For_Feed = 5                    'prevent feed shots from creeping DO
   dim DO_Slope as double                            'slope will be calculated during script
@@ -38,13 +39,22 @@ if p isnot nothing then
         end if
 
       case 2
+        'Slope for previous 2 minutes         
+        DO_Slope = ((DO_high_trigger/100)-(DO_low_trigger/100))/(Time_Since_Phase_Start-(Time_Since_Phase_Start-2))
+
+        'Wait for DO to fall below low trigger
         if .DOPV < DO_low_trigger then
           .phase = .phase + 1
           .LogMessage("Entering phase: Waiting blind time before DO rising detection for " & Wait_Before_DO_Detection & "h")
         end if
 
+        'Fast forward without waiting for DO to fall below low trigger if a spike is identified
+        if (.ExtA >= 1) And (DO_Slope > Minimum_Slope_For_Feed) Then
+            .phase = .phase + 1 
+        end if
+
       case 3
-        if .Runtime_H - .PhaseStart_H > Wait_Before_DO_Detection then
+        if Time_Since_Phase_Start > Wait_Before_DO_Detection then
             .phase = .phase + 1
             .LogMessage("Entering phase: Waiting for DO > "& DO_high_trigger &"%")
         end if
@@ -54,7 +64,7 @@ if p isnot nothing then
 
             'Identify Citric Acid spike if DO > Low Trigger and pH > 7
             if (.ExtA < 1) And (.PHPV > 7) then
-                .phase = .phase - 4
+                .phase = .phase - 2
 
                 'Turn on Pump A if needed
                 .PumpAActive = 1
@@ -71,7 +81,7 @@ if p isnot nothing then
 
       case 5
         'Slope calculation
-        DO_Slope = ((DO_high_trigger/100)-(DO_low_trigger/100))/(.Runtime_H - .PhaseStart_H)
+        DO_Slope = ((DO_high_trigger/100)-(DO_low_trigger/100))/(Time_Since_Phase_Start)
 
         if .DOPV > DO_high_trigger then
 
@@ -100,9 +110,9 @@ if p isnot nothing then
           .LogMessage("Entering phase: Waiting for DO > "& DO_high_trigger &"%")
         end if 
 
-        if .Runtime_H - .PhaseStart_H > Wait_Before_Feed_Start then
+        if Time_Since_Phase_Start > Wait_Before_Feed_Start then
             .phase = .phase + 1
-            .LogMessage("Entering phase: Starting feeds A")
+            .LogMessage("Entering phase: Starting Pump A")
             .FASP = Feed_Rate
 
             'Count number of DO spikes, currently used to identify Citric Acid spike but may be useful in a future script
@@ -111,14 +121,14 @@ if p isnot nothing then
 
       case 7
         Feed_Duration = ((.VPV * bolus_size)/feed_density)/Feed_Rate
-        if .Runtime_H - .PhaseStart_H > Feed_Duration then
+        if Time_Since_Phase_Start > Feed_Duration then
           .phase = .phase - 5
-          .LogMessage("Feeds Complete, Waiting for DO falling under " & DO_low_trigger & "%")
+          .LogMessage("Feed Complete, Waiting for DO falling under " & DO_low_trigger & "%")
           .FASP = 0
         end if
-'       if .Runtime_H - .PhaseStart_H > Feed_Duration_timebased then
+'       if Time_Since_Phase_Start > Feed_Duration_timebased then
 '         .phase = .phase - 5
-'         .LogMessage("Feeds Complete, Waiting for DO falling under " & DO_low_trigger & "%")
+'         .LogMessage("Feed Complete, Waiting for DO falling under " & DO_low_trigger & "%")
 '         .FASP = 0
 '       end if
     end select
