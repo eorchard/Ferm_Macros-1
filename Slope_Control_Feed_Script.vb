@@ -6,7 +6,7 @@
   dim DO_low_trigger as double = 30                 '[%] usually DO setpoint
   dim DO_high_trigger as double = 40                '[%] feed trigger
   dim bolus_size as double = 30                     '[g/L]
-  dim Wait_Before_DO_Detection as double = 15/60    '[h] blind time time before looking for high DO trigger after hitting low trigger
+  dim Wait_Before_DO_Detection as double = 10/60    '[h] blind time time before looking for high DO trigger after hitting low trigger
 
 '### These parameters should remain static generally ###
   dim Wait_Before_Feed_Start as double = 1/60       '[h] Time before high trigger and feeding should be 0.033 for 2min delay - to prevent false alarms
@@ -39,8 +39,10 @@ if p isnot nothing then
         end if
 
       case 2
+        if (Time_Since_Phase_Start Mod (1/60) < 1/2500)
+            .LogMessage("This message should appear every minute")
         'Slope for previous 2 minutes         
-        DO_Slope = ((DO_high_trigger/100)-(DO_low_trigger/100))/(Time_Since_Phase_Start-(Time_Since_Phase_Start-2))
+        DO_Slope = ((.DOPV)/100))/(Time_Since_Phase_Start-(Time_Since_Phase_Start-2))
 
         'Wait for DO to fall below low trigger
         if .DOPV < DO_low_trigger then
