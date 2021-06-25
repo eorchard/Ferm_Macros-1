@@ -154,13 +154,28 @@ Private Sub importRawData()
     'Append all DG raw data to bottom of first sheet
     Call consolidateData(numberOfDataSheets)
    
-    'Convert Duration and InoculationTime to "hh:mm:ss" format
+ 'Convert Duration to array, perform "hh:mm:ss" conversion, insert back into spreadsheet
     lastRow = Application.WorksheetFunction.CountA(Columns(1))
+    timeArray = Worksheets("Data1").Range("B2:B" & lastRow).Value
+ 
+    For i = 1 To UBound(timeArray, 1)
+        timeArray(i, 1) = "=TEXT(""" & timeArray(i, 1) & """, ""hh:mm:ss"")"
+    Next
    
-    'Duration and InoculationTime conversion
-    For Each cell In Range("B2:B" & lastRow, "D2:D" & lastRow)
-        cell.Value = "=TEXT(""" & cell.Value & """, ""hh:mm:ss"")"
-    Next cell
+    With Worksheets("Data1")
+        .Range("B2:B" & lastRow).Value = timeArray
+    End With
+   
+    'Convert InoculationTime to array, perform text conversion, insert back into spreadsheet
+    timeArray = Worksheets("Data1").Range("D2:D" & lastRow).Value
+ 
+    For i = 1 To UBound(timeArray, 1)
+        timeArray(i, 1) = "=TEXT(""" & timeArray(i, 1) & """, ""hh:mm:ss"")"
+    Next
+   
+    With Worksheets("Data1")
+       .Range("D2:D" & lastRow).Value = timeArray
+    End With
 End Sub
  
 'Main macro container
