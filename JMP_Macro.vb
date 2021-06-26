@@ -159,7 +159,7 @@ Private Sub importRawData()
     timeArray = Worksheets("Data1").Range("B2:B" & lastRow).Value
  
     For i = 1 To UBound(timeArray, 1)
-        timeArray(i, 1) = "=TEXT(""" & timeArray(i, 1) & """, ""hh:mm:ss"")"
+        timeArray(i, 1) = "=TEXT(""" & timeArray(i, 1) & """, ""[h]:mm:ss"")"
     Next
    
     With Worksheets("Data1")
@@ -170,7 +170,7 @@ Private Sub importRawData()
     timeArray = Worksheets("Data1").Range("D2:D" & lastRow).Value
  
     For i = 1 To UBound(timeArray, 1)
-        timeArray(i, 1) = "=TEXT(""" & timeArray(i, 1) & """, ""hh:mm:ss"")"
+        timeArray(i, 1) = "=TEXT(""" & timeArray(i, 1) & """, ""[h]:mm:ss"")"
     Next
    
     With Worksheets("Data1")
