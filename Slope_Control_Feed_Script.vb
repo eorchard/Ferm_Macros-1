@@ -14,6 +14,7 @@
   dim Feed_Duration as double                       '[h] feed duration to be calculated during script
   dim Feed_Duration_timebased as double = 2/60      '[h] for use in time based feeding rather than bolus
   dim Time_Since_Phase_Start as double = p.Runtime_H - p.PhaseStart_H 
+  dim Number_Of_Spikes as double = .ExtA
   dim feed_density as double = 1008                 '[g/L], typically 1008 for 80% glycerol
   dim Minimum_Slope_For_Feed = 5                    'prevent feed shots from creeping DO
   dim DO_Slope as double                            'slope will be calculated during script
@@ -51,7 +52,7 @@ if p isnot nothing then
         end if
 
         'Fast forward without waiting for DO to fall below low trigger if a spike is identified
-        if (.ExtA >= 1) And (DO_Slope > Minimum_Slope_For_Feed) Then
+        if (Number_Of_Spikes >= 1) And (DO_Slope > Minimum_Slope_For_Feed) Then
             .phase = .phase + 1 
         end if
 
@@ -65,7 +66,7 @@ if p isnot nothing then
         if .DOPV > DO_low_trigger then
 
             'Identify Citric Acid spike if DO > Low Trigger and pH > 7
-            if (.ExtA < 1) And (.PHPV > 7) then
+            if (Number_Of_Spikes < 1) And (.PHPV > 7) then
                 .phase = .phase - 2
 
                 'Turn on Pump A if needed
@@ -75,7 +76,7 @@ if p isnot nothing then
                 .LogMessage("Entering phase: Waiting for DO falling under " & DO_low_trigger & "%")
 
             'Start slope calculation once DO > Low Trigger
-            else if (.ExtA >= 1) then
+            else if (Number_Of_Spikes >= 1) then
                 .phase = .phase + 1
                 .LogMessage("Entering phase: Approaching DO high trigger of " & DO_high_trigger &"%")
             end if
@@ -88,7 +89,7 @@ if p isnot nothing then
         if .DOPV > DO_high_trigger then
 
           'Check for minimum slope 
-          if ((DO_Slope > Minimum_Slope_For_Feed) Or (.ExtA < 1)) then
+          if ((DO_Slope > Minimum_Slope_For_Feed) Or (Number_Of_Spikes < 1)) then
             .phase = .phase + 1
             .LogMessage("Entering phase: Waiting for high DO longer than " & Wait_Before_Feed_Start & "h")
 
@@ -118,7 +119,7 @@ if p isnot nothing then
             .FASP = Feed_Rate
 
             'Count number of DO spikes, currently used to identify Citric Acid spike but may be useful in a future script
-            .ExtA = .ExtA + 1     
+            Number_Of_Spikes = Number_Of_Spikes + 1     
         end if
 
       case 7
