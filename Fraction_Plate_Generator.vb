@@ -99,10 +99,8 @@ Sub Generate_Plate()
         colorArray(x) = Cells(x + 1, 5).Value
     Next
        
-    'Populate wells
+    'Loop over 96-well plate and populate wells
     counter = 1
-     
-    'Loop over 96-well plate
     For i = 1 To 12
         For j = 1 To 8
             color = colorArray(counter)
