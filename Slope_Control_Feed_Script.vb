@@ -14,7 +14,7 @@
   dim Feed_Duration as double                       '[h] feed duration to be calculated during script
   dim Feed_Duration_timebased as double = 2/60      '[h] for use in time based feeding rather than bolus
   dim Time_Since_Phase_Start as double = p.Runtime_H - p.PhaseStart_H 
-  dim Number_Of_Spikes as double = .ExtA
+  dim Number_Of_Spikes as double = p.ExtA
   dim feed_density as double = 1008                 '[g/L], typically 1008 for 80% glycerol
   dim Minimum_Slope_For_Feed = 5                    'prevent feed shots from creeping DO
   dim DO_Slope as double                            'slope will be calculated during script
@@ -67,6 +67,7 @@ if p isnot nothing then
 
                 'Turn on Pump A if needed
                 .PumpAActive = 1
+                Number_Of_Spikes = Number_Of_Spikes + 1
 
                 .LogMessage("Turning on Pump A following Citric Acid spike")
                 .LogMessage("Entering phase: Waiting for DO falling under " & DO_low_trigger & "%")
