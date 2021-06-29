@@ -18,6 +18,7 @@
   dim feed_density as double = 1008                 '[g/L], typically 1008 for 80% glycerol
   dim Minimum_Slope_For_Feed = 5                    'prevent feed shots from creeping DO
   dim DO_Slope as double                            'slope will be calculated during script
+  dim DO_override_trigger as double = 90            '[%] overrides slope logic 
  
 '#####################################################################
  
@@ -40,11 +41,6 @@ if p isnot nothing then
         end if
 
       case 2
-        if (Time_Since_Phase_Start Mod (1/60) < 1/2500)
-            .LogMessage("This message should appear every minute")
-        'Slope for previous 2 minutes         
-        DO_Slope = ((.DOPV)/100))/(Time_Since_Phase_Start-(Time_Since_Phase_Start-2))
-
         'Wait for DO to fall below low trigger
         if .DOPV < DO_low_trigger then
           .phase = .phase + 1
@@ -52,8 +48,8 @@ if p isnot nothing then
         end if
 
         'Fast forward without waiting for DO to fall below low trigger if a spike is identified
-        if (Number_Of_Spikes >= 1) And (DO_Slope > Minimum_Slope_For_Feed) Then
-            .phase = .phase + 1 
+        if (Number_Of_Spikes >= 1) And (.DOPV > DO_override_trigger) Then
+          .phase = .phase + 3 
         end if
 
       case 3
