@@ -116,7 +116,7 @@ Private Sub importOURData()
     Dim rawDataFileName As String, mm As String, dd As String, ddOriginal As String, filter As String, fileFound As String
     Dim numberOfDaysPerMonthArray As Variant
     Dim lastRow As Integer
-    Dim hasAnotherDataFile As False
+    Dim hasAnotherDataFile As Boolean
     
     numberOfDaysPerMonthArray = Array(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
@@ -139,7 +139,6 @@ Private Sub importOURData()
     For i = 1 To 8
         'TODO: Iterate over each workbook, copy paste data. Clear data on each OUR1-8 sheet before pasting data
         fileFound = Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mm & dd & "*.csv")
-        dd = ddOriginal
 
         If fileFound <> "" Then
             'Collect OUR data for individual DG unit until no more sequential data files exist
@@ -155,15 +154,17 @@ Private Sub importOURData()
                 targetSheet.Range("AJ2", "AV" & lastRow).Value = rawDataSheet.Range("A2", "M" & lastRow).Value
 
                 'Increment day
-                dd = CStr(CInt(dd) + 1)
+                dd = CStr("0" & CInt(dd) + 1)
 
                 'Check if an OUR data file for the next day exists
                 fileFound = Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mm & dd & "*.csv")
                 hasAnotherDataFile = IIf(fileFound <> "", True, False) 
 
-                Debug.Print "dd: " & dd
-                Debug.Print "ddOriginal: " & ddOriginal 
-                Debug.Print "hasAnotherDataFile: " & hasAnotherDataFile
+                If hasAnotherDataFile = False Then
+                    dd = ddOriginal
+                End If
+
+                rawDataWorkbook.Close SaveChanges:=False
 
             Loop While hasAnotherDataFile = True
 
