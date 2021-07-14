@@ -56,7 +56,7 @@ Function countDataSheets(countFromWorkbook) As Integer
     countDataSheets = xCount - 1
 End Function
  
-'Function removes timepoints before inoculation time, populates a new column with name of DG unit
+'Sub removes timepoints before inoculation time, populates a new column with name of DG unit
 Private Sub compressData(numberOfDataSheets, DG_Unit)
     For i = 1 To numberOfDataSheets
         Sheets("Data" & i).Select
@@ -101,30 +101,26 @@ Private Sub importOURData(dasgipRawDataFileName)
     Dim numberOfDaysPerMonthArray As Variant
     Dim lastRow As Integer
     Dim hasAnotherDataFile As Boolean, hasExistingData As Boolean
-    Dim datePatternRegExp As RegExp
-    Dim datePattern As Object
+    Dim datePattern As Object, datePatternRegExp As Object
     
     numberOfDaysPerMonthArray = Array(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+    Set datePatternRegExp = New RegExp
 
     'Get OUR raw data
     filter = "Text files (*.xlsx),*.xlsx"
     Set targetWorkbook = Application.ThisWorkbook
 
-    'Parse date
+    'Parse OUR date to look for based off of date from DG raw data filename
     datePatternRegExp.Pattern = "\d{6}"
     Set datePattern = datePatternRegExp.Execute(dasgipRawDataFileName)
     dd = Right(datePattern(0), 2)
-    mm = Mid(datePattern(0), 2, 2)
+    mm = Mid(datePattern(0), 3, 2)
     ddOriginal = dd
 
-    Debug.Print "dd: " & dd
-    Debug.Print "mm: " & mm
-    Debug.Print "ddOriginal: " & ddOriginal
-    Debug.Print "datePattern: " & datePattern
-
-    'Copy paste data from each OUR file into hidden sheet tab (OUR1, OUR2, etc..)
+    'Copy paste data from each OUR file into sheet tab (OUR1, OUR2, etc..)
     For i = 1 To 8
-        'TODO: Iterate over each workbook, copy paste data. Clear data on each OUR1-8 sheet before pasting data
+        Worksheets(i).Range("A2:M" & Rows.Count).ClearContents
+
         hasExistingData = False
         fileFound = Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mm & dd & "*.csv")
 
@@ -138,16 +134,16 @@ Private Sub importOURData(dasgipRawDataFileName)
                 'Identify last row in order to extract the correct range
                 lastRow = Application.WorksheetFunction.CountA(Columns(1))
 
-                If Not hasExistingData
+                If Not hasExistingData Then
                     'Copy data from OUR raw files to JMP Macro, only for first day
                     targetSheet.Range("A2", "M" & lastRow).Value = rawDataSheet.Range("A2", "M" & lastRow).Value
+                    hasExistingData = True
                 Else
                     rawDataSheet.Range("A2:M" & Range("B2").End(xlDown).Row).Copy
                     Sheets("OUR" & i).Select
                     Columns("A:A").Select
                     Selection.End(xlDown).Offset(1, 0).Select
                     ActiveSheet.Paste
-                    hasExistingData = True
                 End If
 
                 'Increment day
@@ -163,6 +159,7 @@ Private Sub importOURData(dasgipRawDataFileName)
                         mm = IIf(mm = "12", "01", CStr("0" & CInt(mm + 1)))
                     Else 
                         mm = "10"
+                    End If
                 End If
 
                 'Check if an OUR data file for the next day exists
