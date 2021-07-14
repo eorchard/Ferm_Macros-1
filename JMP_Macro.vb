@@ -95,25 +95,36 @@ End Sub
 
 'Sub will import OUR data
 Private Sub importOURData(targetWorkbook)
-    Dim rawDataWorkbookArray As String, OURDataFileName As String, twoDigitMonth As String, twoDigitDay As String
+    Dim rawDataWorkbook As Workbook
+    OURDataFileName As String, twoDigitMonth As String, twoDigitDay As String, filter As String
+    Dim numberOfDaysPerMonthArray(12) As Integer
+    
+    numberOfDaysPerMonthArray = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
     MsgBox "Please select the first OUR raw data file", vbOKOnly
 
     'Get OUR raw data
+    filter = "Text files (*.xlsx),*.xlsx"
     OURDataFileName = Application.GetOpenFilename(filter, , caption)
+    Set rawDataWorkbook = Application.Workbooks.Open(OURDataFileName)
 
-    twoDigitMonth = Left(OURDataFileName, 4)
-    twoDigitDay = Right(twoDigitMonth, 2)
-    twoDigitMonth = Left(twoDigitMonth, len(twoDigitMonth)-2)
-    Set rawDataWorkbookArray = Application.Workbooks.Open(OURDataFileName)
+    'Parse date
+    OURDataFilename = Right(OURDataFileName, 12)
+    OURDataFilename = Left(OURDataFileName, 8)
+    twoDigitDay = Left(OURDataFileName, 4)
+    twoDigitDay = Right(twoDigitDay, 2)
+    twoDigitMonth = Left(OURDataFileName, 2)
 
-    Debug.Print("Two Digit Month: " & twoDigitMonth)
-    Debug.Print("Two Digit Day: " & twoDigitDay)
+    'Copy paste data from each file
 
+    'Increment day, search again. Increment month if twoDigitDay greater than day
+
+    'Close raw data file
+    rawDataWorkbook.Close SaveChanges:=False
 End Sub
  
 'Function imports raw data file from DG units
-Private Sub importRawData(rawDataFileName)
+Private Sub importRawData()
     Dim filter As String, DG_Unit As String
     Dim rawDataSheet As Worksheet, targetSheet As Worksheet
     Dim rawDataWorkbook As Workbook, targetWorkbook As Workbook
@@ -122,9 +133,6 @@ Private Sub importRawData(rawDataFileName)
    
     filter = "Text files (*.xlsx),*.xlsx"
     MsgBox "Please select the DASGIP raw data file", vbOKOnly
-    answer = MsgBox("Would you like to import OUR data?", vbYesNo)
-
-    importOUR = IIf(answer = 6, True, False)
    
     'JMP Macro workbook is the target
     Set targetWorkbook = Application.ThisWorkbook
@@ -169,7 +177,10 @@ Private Sub importRawData(rawDataFileName)
     'Close raw data file
     rawDataWorkbook.Close SaveChanges:=False
    
-    'Import OUR data if selected 
+    'Import OUR data if selected
+    answer = MsgBox("Would you like to import OUR data?", vbYesNo)
+    importOUR = IIf(answer = 6, True, False)
+
     If importOUR Then
         Call importOURData(targetWorkbook)
     End If
