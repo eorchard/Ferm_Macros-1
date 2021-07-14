@@ -77,34 +77,18 @@ Private Sub compressData(numberOfDataSheets, DG_Unit)
 End Sub
  
 'Sub will consolidate data onto one sheet
-Private Sub consolidateData(numberOfDataSheets, importOUR)
-    If importOUR Then
-        If (numberOfDataSheets > 1) Then
-            'TODO: Import raw data and OUR data for multiple vessels (Data1-8, OUR1-8)
-            For i = 2 To numberOfDataSheets
-                Sheets("Data" & i).Select
-                Range("A2:AO" & Range("B2").End(xlDown).Row).Copy
-                Sheets("Data1").Select
-                Columns("A:A").Select
-                Selection.End(xlDown).Offset(1, 0).Select
-                ActiveSheet.Paste
-            Next
-        End If
-        Else
-            'TODO: Import just the OUR data for 1 vessel
-    Else
-        If (numberOfDataSheets > 1) Then
-            For i = 2 To numberOfDataSheets
-                Sheets("Data" & i).Select
-                Range("A2:AO" & Range("B2").End(xlDown).Row).Copy
-                Sheets("Data1").Select
-                Columns("A:A").Select
-                Selection.End(xlDown).Offset(1, 0).Select
-                ActiveSheet.Paste
-            Next
-        End If
+Private Sub consolidateData(numberOfDataSheets)
+    If (numberOfDataSheets > 1) Then
+        For i = 2 To numberOfDataSheets
+            Sheets("Data" & i).Select
+            Range("A2:AO" & Range("B2").End(xlDown).Row).Copy
+            Sheets("Data1").Select
+            Columns("A:A").Select
+            Selection.End(xlDown).Offset(1, 0).Select
+            ActiveSheet.Paste
+        Next
     End If
-   
+
     'Remove number "1" from headers
     Worksheets("Data1").Rows("1").Replace What:="1", Replacement:=""
 End Sub
@@ -116,7 +100,7 @@ Private Sub importOURData()
     Dim rawDataFileName As String, mm As String, dd As String, ddOriginal As String, filter As String, fileFound As String
     Dim numberOfDaysPerMonthArray As Variant
     Dim lastRow As Integer
-    Dim hasAnotherDataFile As Boolean
+    Dim hasAnotherDataFile As Boolean, hasExistingData As Boolean
     
     numberOfDaysPerMonthArray = Array(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
@@ -138,6 +122,7 @@ Private Sub importOURData()
     'Copy paste data from each OUR file into hidden sheet tab (OUR1, OUR2, etc..)
     For i = 1 To 8
         'TODO: Iterate over each workbook, copy paste data. Clear data on each OUR1-8 sheet before pasting data
+        hasExistingData = False
         fileFound = Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mm & dd & "*.csv")
 
         If fileFound <> "" Then
@@ -150,25 +135,40 @@ Private Sub importOURData()
                 'Identify last row in order to extract the correct range
                 lastRow = Application.WorksheetFunction.CountA(Columns(1))
 
-                'Copy data from OUR raw files to JMP Macro
-                targetSheet.Range("AJ2", "AV" & lastRow).Value = rawDataSheet.Range("A2", "M" & lastRow).Value
+                If Not hasExistingData
+                    'Copy data from OUR raw files to JMP Macro, only for first day
+                    targetSheet.Range("A2", "M" & lastRow).Value = rawDataSheet.Range("A2", "M" & lastRow).Value
+                Else
+                    rawDataSheet.Range("A2:M" & Range("B2").End(xlDown).Row).Copy
+                    Sheets("OUR" & i).Select
+                    Columns("A:A").Select
+                    Selection.End(xlDown).Offset(1, 0).Select
+                    ActiveSheet.Paste
+                End If
 
                 'Increment day
-                dd = CStr("0" & CInt(dd) + 1)
+                If CInt(dd) >= 9
+                    dd = CStr(CInt(dd) + 1)
+                Else If CInt(dd) < 9
+                    dd = CStr("0" & CInt(dd) + 1)
+                
+                'Reset dd or mm when they exceed the max value
+                Else If (CInt(dd) >= numberOfDaysPerMonthArray(CInt(mm) - 1))
+                    dd = "01"
+                    IIf (mm = 12, mm = 1, mm + 1)
+                End If
 
                 'Check if an OUR data file for the next day exists
                 fileFound = Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mm & dd & "*.csv")
                 hasAnotherDataFile = IIf(fileFound <> "", True, False) 
 
-                If hasAnotherDataFile = False Then
+                If Not hasAnotherDataFile Then
                     dd = ddOriginal
                 End If
 
                 rawDataWorkbook.Close SaveChanges:=False
 
             Loop While hasAnotherDataFile = True
-
-            'TODO: Increment day, search again. Increment month if dd is greater than day. Append to bottom of hidden sheet tab
         End If
     Next
 
@@ -240,7 +240,7 @@ Private Sub importRawData()
     End If
 
     'Append all DG raw data to bottom of first sheet
-    Call consolidateData(numberOfDataSheets, importOUR)
+    Call consolidateData(numberOfDataSheets)
    
  'Convert Duration to array, perform "[h]:mm:ss" conversion, insert back into spreadsheet
     lastRow = Application.WorksheetFunction.CountA(Columns(1))
