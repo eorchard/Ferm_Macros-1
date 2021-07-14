@@ -94,30 +94,28 @@ Private Sub consolidateData(numberOfDataSheets)
 End Sub
 
 'Sub will import OUR data
-Private Sub importOURData()
-    Dim rawDataWorkbookArray As String, twoDigitMonth As String, twoDigitDay As String
+Private Sub importOURData(targetWorkbook)
+    Dim rawDataWorkbookArray As String, OURDataFileName As String, twoDigitMonth As String, twoDigitDay As String
 
     MsgBox "Please select the first OUR raw data file", vbOKOnly
 
-    'JMP Macro workbook is the target
-    Set targetWorkbook = Application.ThisWorkbook
-   
     'Get OUR raw data
-    rawDataFilename = Application.GetOpenFilename(filter, , caption)
-    twoDigitMonth = Left(rawDataFileName, 4)
+    OURDataFileName = Application.GetOpenFilename(filter, , caption)
+
+    twoDigitMonth = Left(OURDataFileName, 4)
     twoDigitDay = Right(twoDigitMonth, 2)
     twoDigitMonth = Left(twoDigitMonth, len(twoDigitMonth)-2)
-    Set rawDataWorkbookArray = Application.Workbooks.Open(rawDataFilename)
+    Set rawDataWorkbookArray = Application.Workbooks.Open(OURDataFileName)
 
-    Debug.Print "Two Digit Month: " & twoDigitMonth
-    Debug.Print "Two Digit Day: " & twoDigitDay
+    Debug.Print("Two Digit Month: " & twoDigitMonth)
+    Debug.Print("Two Digit Day: " & twoDigitDay)
 
 End Sub
  
 'Function imports raw data file from DG units
-Private Sub importRawData()
-    Dim filter As String, rawDataFilename As String, rawDataWorkbookArray(8) As String, DG_Unit As String
-    Dim rawDataSheet As Workbook, targetSheet As Worksheet
+Private Sub importRawData(rawDataFileName)
+    Dim filter As String, DG_Unit As String
+    Dim rawDataSheet As Worksheet, targetSheet As Worksheet
     Dim rawDataWorkbook As Workbook, targetWorkbook As Workbook
     Dim numberOfSpikes As Integer, lastRow As Integer, answer As Integer
     Dim importOUR As Boolean
@@ -171,9 +169,9 @@ Private Sub importRawData()
     'Close raw data file
     rawDataWorkbook.Close SaveChanges:=False
    
-    'Import OUR data if selected
+    'Import OUR data if selected 
     If importOUR Then
-        Call importOURData
+        Call importOURData(targetWorkbook)
     End If
 
     'Append all DG raw data to bottom of first sheet
