@@ -113,10 +113,12 @@ End Sub
 Private Sub importOURData()
     Dim rawDataWorkbook As Workbook, targetWorkbook As Workbook
     Dim rawDataSheet As Worksheet, targetSheet As Worksheet
-    Dim rawDataFileName As String, mm As String, dd As String, mmdd As String, filter As String
-    Dim numberOfDaysPerMonthArray(12) As Integer, lastRow As Integer
+    Dim rawDataFileName As String, mm As String, dd As String, ddOriginal As String, filter As String, fileFound As String
+    Dim numberOfDaysPerMonthArray As Variant
+    Dim lastRow As Integer
+    Dim hasAnotherDataFile As False
     
-    numberOfDaysPerMonthArray = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    numberOfDaysPerMonthArray = Array(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
     MsgBox "Please select the first OUR raw data file", vbOKOnly
 
@@ -127,29 +129,48 @@ Private Sub importOURData()
 
     'Parse date
     rawDataFileNameFull = Right(rawDataFileNameFull, 12)
-    rawDataFileName = Left(rawDataFileName, 8)
+    rawDataFileName = Left(rawDataFileNameFull, 8)
     dd = Left(rawDataFileName, 4)
     dd = Right(dd, 2)
+    ddOriginal = dd
     mm = Left(rawDataFileName, 2)
-    mmdd = mm & dd
 
     'Copy paste data from each OUR file into hidden sheet tab (OUR1, OUR2, etc..)
     For i = 1 To 8
         'TODO: Iterate over each workbook, copy paste data. Clear data on each OUR1-8 sheet before pasting data
-        If Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mmdd & "*.csv")
-        Debug.Print "Hello " & i
-        'Set rawDataWorkbook = Application.Workbooks.Open("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mmdd & ".csv")
-        'Set rawDataSheet = rawDataWorkbook.Worksheets(1)
-        'Set targetSheet = targetWorkbook.Worksheets("OUR" & i)
+        fileFound = Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mm & dd & "*.csv")
+        dd = ddOriginal
 
-        'Identify last row in order to extract the correct range
-        'lastRow = Application.WorksheetFunction.CountA(Columns(1))
+        If fileFound <> "" Then
+            'Collect OUR data for individual DG unit until no more sequential data files exist
+            Do
+                Set rawDataWorkbook = Application.Workbooks.Open("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mm & dd & "*.csv")
+                Set rawDataSheet = rawDataWorkbook.Worksheets(1)
+                Set targetSheet = targetWorkbook.Worksheets("OUR" & i)
 
-        'Copy data from OUR raw files to JMP Macro
-        'targetSheet.Range("AJ2", "AV" & lastRow).Value = rawDataSheet.Range("A2", "M" & lastRow).Value
+                'Identify last row in order to extract the correct range
+                lastRow = Application.WorksheetFunction.CountA(Columns(1))
+
+                'Copy data from OUR raw files to JMP Macro
+                targetSheet.Range("AJ2", "AV" & lastRow).Value = rawDataSheet.Range("A2", "M" & lastRow).Value
+
+                'Increment day
+                dd = CStr(CInt(dd) + 1)
+
+                'Check if an OUR data file for the next day exists
+                fileFound = Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mm & dd & "*.csv")
+                hasAnotherDataFile = IIf(fileFound <> "", True, False) 
+
+                Debug.Print "dd: " & dd
+                Debug.Print "ddOriginal: " & ddOriginal 
+                Debug.Print "hasAnotherDataFile: " & hasAnotherDataFile
+
+            Loop While hasAnotherDataFile = True
+
+            'TODO: Increment day, search again. Increment month if dd is greater than day. Append to bottom of hidden sheet tab
+        End If
     Next
 
-        'TODO: Increment day, search again. Increment month if dd is greater than day. Append to bottom of hidden sheet tab
 
     'Close raw data file
     rawDataWorkbook.Close SaveChanges:=False
