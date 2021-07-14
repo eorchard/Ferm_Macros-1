@@ -107,7 +107,7 @@ Private Sub importOURData()
     twoDigitMonth = Left(rawDataFileName, 4)
     twoDigitDay = Right(twoDigitMonth, 2)
     twoDigitMonth = Left(twoDigitMonth, len(twoDigitMonth)-2)
-    Set rawDataWorkbook = Application.Workbooks.Open(rawDataFilename)
+    Set rawDataWorkbookArray = Application.Workbooks.Open(rawDataFilename)
 
     Debug.Print "Two Digit Month: " & twoDigitMonth
     Debug.Print "Two Digit Day: " & twoDigitDay
@@ -124,14 +124,9 @@ Private Sub importRawData()
    
     filter = "Text files (*.xlsx),*.xlsx"
     MsgBox "Please select the DASGIP raw data file", vbOKOnly
-    answer = MsgBox "Would you like to import OUR data?", vbYesNo
+    answer = MsgBox("Would you like to import OUR data?", vbYesNo)
 
     importOUR = IIf(answer = 6, True, False)
-   
-    'Clear pre-existing data
-    For i = 1 To 8
-        Worksheets(i).Range("A2:AV" & Rows.Count).ClearContents
-    Next
    
     'JMP Macro workbook is the target
     Set targetWorkbook = Application.ThisWorkbook
@@ -178,7 +173,7 @@ Private Sub importRawData()
    
     'Import OUR data if selected
     If importOUR Then
-        importOURData()
+        Call importOURData
     End If
 
     'Append all DG raw data to bottom of first sheet
@@ -210,6 +205,11 @@ End Sub
  
 'Main macro container
 Sub Run_JMP_Macro()
+    'Clear pre-existing data
+    For i = 1 To 8
+        Worksheets(i).Range("A2:AV" & Rows.Count).ClearContents
+    Next
+   
     'Import DG raw data file
     Call importRawData
 End Sub
