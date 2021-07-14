@@ -76,7 +76,7 @@ Private Sub compressData(numberOfDataSheets, DG_Unit)
      Next
 End Sub
  
-'Function will consolidate data onto one sheet
+'Sub will consolidate data onto one sheet
 Private Sub consolidateData(numberOfDataSheets)
     If (numberOfDataSheets > 1) Then
         For i = 2 To numberOfDataSheets
@@ -92,20 +92,45 @@ Private Sub consolidateData(numberOfDataSheets)
     'Remove number "1" from headers
     Worksheets("Data1").Rows("1").Replace What:="1", Replacement:=""
 End Sub
+
+'Sub will import OUR data
+Private Sub importOURData()
+    Dim rawDataWorkbookArray As String, twoDigitMonth As String, twoDigitDay As String
+
+    MsgBox "Please select the first OUR raw data file", vbOKOnly
+
+    'JMP Macro workbook is the target
+    Set targetWorkbook = Application.ThisWorkbook
+   
+    'Get OUR raw data
+    rawDataFilename = Application.GetOpenFilename(filter, , caption)
+    twoDigitMonth = Left(rawDataFileName, 4)
+    twoDigitDay = Right(twoDigitMonth, 2)
+    twoDigitMonth = Left(twoDigitMonth, len(twoDigitMonth)-2)
+    Set rawDataWorkbook = Application.Workbooks.Open(rawDataFilename)
+
+    Debug.Print "Two Digit Month: " & twoDigitMonth
+    Debug.Print "Two Digit Day: " & twoDigitDay
+
+End Sub
  
 'Function imports raw data file from DG units
 Private Sub importRawData()
-    Dim filter As String, rawDataFilename As String, DG_Unit As String
+    Dim filter As String, rawDataFilename As String, rawDataWorkbookArray(8) As String, DG_Unit As String
     Dim rawDataSheet As Workbook, targetSheet As Worksheet
     Dim rawDataWorkbook As Workbook, targetWorkbook As Workbook
-    Dim numberOfSpikes As Integer, lastRow As Integer
+    Dim numberOfSpikes As Integer, lastRow As Integer, answer As Integer
+    Dim importOUR As Boolean
    
     filter = "Text files (*.xlsx),*.xlsx"
     MsgBox "Please select the DASGIP raw data file", vbOKOnly
+    answer = MsgBox "Would you like to import OUR data?", vbYesNo
+
+    importOUR = IIf(answer = 6, True, False)
    
     'Clear pre-existing data
     For i = 1 To 8
-        Worksheets(i).Range("A2:AI" & Rows.Count).ClearContents
+        Worksheets(i).Range("A2:AV" & Rows.Count).ClearContents
     Next
    
     'JMP Macro workbook is the target
@@ -151,10 +176,15 @@ Private Sub importRawData()
     'Close raw data file
     rawDataWorkbook.Close SaveChanges:=False
    
+    'Import OUR data if selected
+    If importOUR Then
+        importOURData()
+    End If
+
     'Append all DG raw data to bottom of first sheet
     Call consolidateData(numberOfDataSheets)
    
- 'Convert Duration to array, perform "hh:mm:ss" conversion, insert back into spreadsheet
+ 'Convert Duration to array, perform "[h]:mm:ss" conversion, insert back into spreadsheet
     lastRow = Application.WorksheetFunction.CountA(Columns(1))
     timeArray = Worksheets("Data1").Range("B2:B" & lastRow).Value
  
