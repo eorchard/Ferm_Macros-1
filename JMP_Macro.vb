@@ -94,30 +94,33 @@ Private Sub consolidateData(numberOfDataSheets)
 End Sub
 
 'Sub will import OUR data
-Private Sub importOURData()
+Private Sub importOURData(dasgipRawDataFileName)
     Dim rawDataWorkbook As Workbook, targetWorkbook As Workbook
     Dim rawDataSheet As Worksheet, targetSheet As Worksheet
-    Dim rawDataFileName As String, mm As String, dd As String, ddOriginal As String, filter As String, fileFound As String
+    Dim mm As String, dd As String, ddOriginal As String, filter As String, fileFound As String
     Dim numberOfDaysPerMonthArray As Variant
     Dim lastRow As Integer
     Dim hasAnotherDataFile As Boolean, hasExistingData As Boolean
+    Dim datePatternRegExp As RegExp
+    Dim datePattern As Object
     
     numberOfDaysPerMonthArray = Array(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
-    MsgBox "Please select the first OUR raw data file", vbOKOnly
-
     'Get OUR raw data
     filter = "Text files (*.xlsx),*.xlsx"
-    rawDataFileNameFull = Application.GetOpenFilename(filter, , caption)
     Set targetWorkbook = Application.ThisWorkbook
 
     'Parse date
-    rawDataFileNameFull = Right(rawDataFileNameFull, 12)
-    rawDataFileName = Left(rawDataFileNameFull, 8)
-    dd = Left(rawDataFileName, 4)
-    dd = Right(dd, 2)
+    datePatternRegExp.Pattern = "\d{6}"
+    Set datePattern = datePatternRegExp.Execute(dasgipRawDataFileName)
+    dd = Right(datePattern(0), 2)
+    mm = Mid(datePattern(0), 2, 2)
     ddOriginal = dd
-    mm = Left(rawDataFileName, 2)
+
+    Debug.Print "dd: " & dd
+    Debug.Print "mm: " & mm
+    Debug.Print "ddOriginal: " & ddOriginal
+    Debug.Print "datePattern: " & datePattern
 
     'Copy paste data from each OUR file into hidden sheet tab (OUR1, OUR2, etc..)
     For i = 1 To 8
@@ -144,18 +147,22 @@ Private Sub importOURData()
                     Columns("A:A").Select
                     Selection.End(xlDown).Offset(1, 0).Select
                     ActiveSheet.Paste
+                    hasExistingData = True
                 End If
 
                 'Increment day
-                If CInt(dd) >= 9
+                If CInt(dd) >= 9 Then
                     dd = CStr(CInt(dd) + 1)
-                Else If CInt(dd) < 9
+                ElseIf CInt(dd) < 9 Then
                     dd = CStr("0" & CInt(dd) + 1)
                 
                 'Reset dd or mm when they exceed the max value
-                Else If (CInt(dd) >= numberOfDaysPerMonthArray(CInt(mm) - 1))
+                ElseIf (CInt(dd) >= numberOfDaysPerMonthArray(CInt(mm) - 1)) Then
                     dd = "01"
-                    IIf (mm = 12, mm = 1, mm + 1)
+                    If mm <> "09" Then
+                        mm = IIf(mm = "12", "01", CStr("0" & CInt(mm + 1)))
+                    Else 
+                        mm = "10"
                 End If
 
                 'Check if an OUR data file for the next day exists
@@ -171,10 +178,6 @@ Private Sub importOURData()
             Loop While hasAnotherDataFile = True
         End If
     Next
-
-
-    'Close raw data file
-    rawDataWorkbook.Close SaveChanges:=False
 End Sub
  
 'Function imports raw data file from DG units
@@ -236,7 +239,7 @@ Private Sub importRawData()
     importOUR = IIf(answer = 6, True, False)
 
     If importOUR Then
-        Call importOURData()
+        Call importOURData(rawDataFileName)
     End If
 
     'Append all DG raw data to bottom of first sheet
