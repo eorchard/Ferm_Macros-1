@@ -56,7 +56,7 @@ Function countDataSheets(countFromWorkbook) As Integer
     countDataSheets = xCount - 1
 End Function
  
-'Function removes timepoints before inoculation time, populates a new column with name of DG unit
+'Sub removes timepoints before inoculation time, populates a new column with name of DG unit
 Private Sub compressData(numberOfDataSheets, DG_Unit)
     For i = 1 To numberOfDataSheets
         Sheets("Data" & i).Select
@@ -76,7 +76,7 @@ Private Sub compressData(numberOfDataSheets, DG_Unit)
      Next
 End Sub
  
-'Function will consolidate data onto one sheet
+'Sub will consolidate data onto one sheet
 Private Sub consolidateData(numberOfDataSheets)
     If (numberOfDataSheets > 1) Then
         For i = 2 To numberOfDataSheets
@@ -88,25 +88,105 @@ Private Sub consolidateData(numberOfDataSheets)
             ActiveSheet.Paste
         Next
     End If
-   
+
     'Remove number "1" from headers
     Worksheets("Data1").Rows("1").Replace What:="1", Replacement:=""
+End Sub
+
+'Sub will import OUR data
+Private Sub importOURData(dasgipRawDataFileName)
+    Dim rawDataWorkbook As Workbook, targetWorkbook As Workbook
+    Dim rawDataSheet As Worksheet, targetSheet As Worksheet
+    Dim mm As String, dd As String, ddOriginal As String, filter As String, fileFound As String
+    Dim numberOfDaysPerMonthArray As Variant
+    Dim lastRow As Integer
+    Dim hasAnotherDataFile As Boolean, hasExistingData As Boolean
+    Dim datePattern As Object, datePatternRegExp As Object
+    
+    numberOfDaysPerMonthArray = Array(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+    Set datePatternRegExp = New RegExp
+
+    'Get OUR raw data
+    filter = "Text files (*.xlsx),*.xlsx"
+    Set targetWorkbook = Application.ThisWorkbook
+
+    'Parse OUR date to look for based off of date from DG raw data filename
+    datePatternRegExp.Pattern = "\d{6}"
+    Set datePattern = datePatternRegExp.Execute(dasgipRawDataFileName)
+    dd = Right(datePattern(0), 2)
+    mm = Mid(datePattern(0), 3, 2)
+    ddOriginal = dd
+
+    'Copy paste data from each OUR file into sheet tab (OUR1, OUR2, etc..)
+    For i = 1 To 8
+        Worksheets(i).Range("A2:M" & Rows.Count).ClearContents
+
+        hasExistingData = False
+        fileFound = Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mm & dd & "*.csv")
+
+        If fileFound <> "" Then
+            'Collect OUR data for individual DG unit until no more sequential data files exist
+            Do
+                Set rawDataWorkbook = Application.Workbooks.Open("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mm & dd & "*.csv")
+                Set rawDataSheet = rawDataWorkbook.Worksheets(1)
+                Set targetSheet = targetWorkbook.Worksheets("OUR" & i)
+
+                'Identify last row in order to extract the correct range
+                lastRow = Application.WorksheetFunction.CountA(Columns(1))
+
+                If Not hasExistingData Then
+                    'Copy data from OUR raw files to JMP Macro, only for first day
+                    targetSheet.Range("A2", "M" & lastRow).Value = rawDataSheet.Range("A2", "M" & lastRow).Value
+                    hasExistingData = True
+                Else
+                    rawDataSheet.Range("A2:M" & Range("B2").End(xlDown).Row).Copy
+                    Sheets("OUR" & i).Select
+                    Columns("A:A").Select
+                    Selection.End(xlDown).Offset(1, 0).Select
+                    ActiveSheet.Paste
+                End If
+
+                'Increment day
+                If CInt(dd) >= 9 Then
+                    dd = CStr(CInt(dd) + 1)
+                ElseIf CInt(dd) < 9 Then
+                    dd = CStr("0" & CInt(dd) + 1)
+                
+                'Reset dd or mm when they exceed the max value
+                ElseIf (CInt(dd) >= numberOfDaysPerMonthArray(CInt(mm) - 1)) Then
+                    dd = "01"
+                    If mm <> "09" Then
+                        mm = IIf(mm = "12", "01", CStr("0" & CInt(mm + 1)))
+                    Else 
+                        mm = "10"
+                    End If
+                End If
+
+                'Check if an OUR data file for the next day exists
+                fileFound = Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mm & dd & "*.csv")
+                hasAnotherDataFile = IIf(fileFound <> "", True, False) 
+
+                If Not hasAnotherDataFile Then
+                    dd = ddOriginal
+                End If
+
+                rawDataWorkbook.Close SaveChanges:=False
+
+            Loop While hasAnotherDataFile = True
+        End If
+    Next
 End Sub
  
 'Function imports raw data file from DG units
 Private Sub importRawData()
-    Dim filter As String, rawDataFilename As String, DG_Unit As String
-    Dim rawDataSheet As Workbook, targetSheet As Worksheet
+    Dim filter As String, DG_Unit As String
+    Dim rawDataSheet As Worksheet, targetSheet As Worksheet
     Dim rawDataWorkbook As Workbook, targetWorkbook As Workbook
-    Dim numberOfSpikes As Integer, lastRow As Integer
+    Dim numberOfSpikes As Integer, lastRow As Integer, answer As Integer
+    Dim importOUR As Boolean
    
     filter = "Text files (*.xlsx),*.xlsx"
     MsgBox "Please select the DASGIP raw data file", vbOKOnly
-   
-    'Clear pre-existing data
-    For i = 1 To 8
-        Worksheets(i).Range("A2:AI" & Rows.Count).ClearContents
-    Next
    
     'JMP Macro workbook is the target
     Set targetWorkbook = Application.ThisWorkbook
@@ -151,10 +231,18 @@ Private Sub importRawData()
     'Close raw data file
     rawDataWorkbook.Close SaveChanges:=False
    
+    'Import OUR data if selected
+    answer = MsgBox("Would you like to import OUR data?", vbYesNo)
+    importOUR = IIf(answer = 6, True, False)
+
+    If importOUR Then
+        Call importOURData(rawDataFileName)
+    End If
+
     'Append all DG raw data to bottom of first sheet
     Call consolidateData(numberOfDataSheets)
    
- 'Convert Duration to array, perform "hh:mm:ss" conversion, insert back into spreadsheet
+ 'Convert Duration to array, perform "[h]:mm:ss" conversion, insert back into spreadsheet
     lastRow = Application.WorksheetFunction.CountA(Columns(1))
     timeArray = Worksheets("Data1").Range("B2:B" & lastRow).Value
  
@@ -180,6 +268,11 @@ End Sub
  
 'Main macro container
 Sub Run_JMP_Macro()
+    'Clear pre-existing data
+    For i = 1 To 8
+        Worksheets(i).Range("A2:AV" & Rows.Count).ClearContents
+    Next
+   
     'Import DG raw data file
     Call importRawData
 End Sub

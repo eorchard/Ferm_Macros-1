@@ -165,29 +165,25 @@ Workbooks(ImportFileName).Close
    
 Next exportsheet
  
- 
-'### Row Fill for all rows. Works but takes a lot of computing power. Currently Disabled  #####################
-'##############################################################################################################
- 
-'    For Each exportsheet In ThisWorkbook.Worksheets
-'        If InStr(exportsheet.Name, "Data") = 0 Then 'do nothing
-'        Else:
-'            If IsEmpty(ThisWorkbook.Worksheets(exportsheet.Name).Cells(1, 1).Value) = True Then ' do nothing
-'            Else:
-'                With ThisWorkbook.Worksheets(exportsheet.Name)
-'                    totalrowcount = .Columns(1).End(xlDown).Row
-'                        For n = 1 To 34 '##34 is last column from DASGIP import
-'                            For i = 10 To totalrowcount
-'                                If .Cells(i, n).Value = 0 Then
-'                                    .Cells(i, n).Value = .Cells(i - 1, n).Value
-'                                End If
-'                            Next i
-'                        Next n
-'                End With
-'            End If
-'        End If
-'    Next exportsheet
-'################################################################################################################
+'Fill down columns for Temperature and pH
+For Each exportsheet In ThisWorkbook.Worksheets
+    If InStr(exportsheet.Name, "Data") = 0 Then 'do nothing
+    Else:
+        If IsEmpty(ThisWorkbook.Worksheets(exportsheet.Name).Cells(1, 1).Value) = True Then ' do nothing
+        Else:
+            With ThisWorkbook.Worksheets(exportsheet.Name)
+                totalrowcount = .Columns(1).End(xlDown).Row
+                    For n = 1 To 40 '##40 is last column from DASGIP import
+                        For i = 10 To totalrowcount
+                            If (.Cells(0, n).Value Like "pH1.PV" & "*") Or (.Cells(0, n).Value Like "T1.PV" & "*") Then
+                                .Cells(i, n).Value = .Cells(i - 1, n).Value
+                            End If
+                        Next i
+                    Next n
+            End With
+        End If
+    End If
+Next exportsheet
  
 CloseMacro:
    
