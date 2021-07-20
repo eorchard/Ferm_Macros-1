@@ -139,14 +139,7 @@ Private Sub importOURData(dasgipRawDataFileName)
                     targetSheet.Range("A2", "M" & lastRow).Value = rawDataSheet.Range("A2", "M" & lastRow).Value
                     hasExistingData = True
                 Else
-                    rawDataSheet.Activate
-                    Range("A2:M" & Range("B2").End(xlDown).Row).Copy
-                    targetSheet.Activate
-                    Sheets("OUR" & i).Select
-                    ActiveSheet.("A2:M" & Rows.Count).ClearContents
-                    Columns("A:A").Select
-                    Selection.End(xlDown).Offset(1, 0).Select
-                    ActiveSheet.Paste
+                    targetSheet.Range("A" & lastRow+1).Value = rawDataSheet.Range("A2", "M" & lastRow).Value
                 End If
 
                 'Increment day
