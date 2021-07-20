@@ -34,9 +34,6 @@ End Function
  
 'Sub adds DG Column to raw data
 Private Sub addDGColumn(DG_Unit, vesselNumber)
-    Columns("C:C").Select
-    Selection.End(xlDown).Select
-    Range("A2:A" & ActiveCell.Row - 1).EntireRow.Delete
     ActiveWindow.ScrollRow = 1
     Range("C1").EntireColumn.Insert
     Range("C1").Value = "DG"
@@ -63,12 +60,18 @@ Private Sub removePreinoculationData(numberOfDataSheets, DG_Unit)
        
         'Need this condition to check if Data Sheet # matches actual DG unit since the vessels aren't always run in sequence
         If Range("E1").Value Like "*" & i & "*" Then
+            Columns("C:C").Select
+            Selection.End(xlDown).Select
+            Range("A2:A" & ActiveCell.Row - 1).EntireRow.Delete
             Call addDGColumn(DG_Unit, i)
            
         'If DG vessel doesn't match up with Data Sheet #, compare the other numbers
         Else
             For j = 1 To 8
                 If Range("E1").Value Like "*" & j & "*" Then
+                    Columns("C:C").Select
+                    Selection.End(xlDown).Select
+                    Range("A2:A" & ActiveCell.Row - 1).EntireRow.Delete
                     Call addDGColumn(DG_Unit, j)
                 End If
             Next
@@ -99,12 +102,13 @@ Private Sub importOURData(dasgipRawDataFileName)
     Dim rawDataSheet As Worksheet, targetSheet As Worksheet
     Dim yy As String, mm As String, dd As String, ddOriginal As String, filter As String, fileFound As String
     Dim numberOfDaysPerMonthArray As Variant
-    Dim lastRow As Integer
+    Dim lastRowTarget As Integer, lastRowRaw As Integer
     Dim hasAnotherDataFile As Boolean, hasExistingData As Boolean
     Dim datePattern As Object, datePatternRegExp As Object
     
     numberOfDaysPerMonthArray = Array(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
     Set datePatternRegExp = New RegExp
+    fileNotFound = True
 
     'Get OUR raw data
     filter = "Text files (*.xlsx),*.xlsx"
@@ -122,8 +126,10 @@ Private Sub importOURData(dasgipRawDataFileName)
     For i = 1 To 8
         hasExistingData = False
         fileFound = Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mm & dd & "*.csv")
+        Call addDGColumn("DG4_u", i)
 
         If fileFound <> "" Then
+            fileNotFound = False
             'Collect OUR data for individual DG unit until no more sequential data files exist
             Do
                 Set rawDataWorkbook = Application.Workbooks.Open("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\FOUR-" & i & "\analysis\" & mm & dd & "*.csv")
@@ -131,15 +137,15 @@ Private Sub importOURData(dasgipRawDataFileName)
                 Set targetSheet = targetWorkbook.Worksheets("OUR" & i)
 
                 'Identify last row in order to extract the correct range
-                lastRow = Application.WorksheetFunction.CountA(Columns(1))
+                lastRowTarget = targetSheet.Range("A" & Rows.Count).End(xlUp).Row
+                lastRowRaw = rawDataSheet.Range("A" & Rows.Count).End(xlUp).Row
 
-                'TODO: Append to bottom without using Select, might be able to get rid of boolean
                 If Not hasExistingData Then
                     'Copy data from OUR raw files to JMP Macro, only for first day
-                    targetSheet.Range("A2", "M" & lastRow).Value = rawDataSheet.Range("A2", "M" & lastRow).Value
+                    targetSheet.Range("A2", "M" & lastRowTarget + lastRowRaw - 1).Value = rawDataSheet.Range("A2", "M" & lastRowRaw).Value
                     hasExistingData = True
                 Else
-                    targetSheet.Range("A" & lastRow+1).Value = rawDataSheet.Range("A2", "M" & lastRow).Value
+                    targetSheet.Range("A" & lastRowTarget, "M" & lastRowTarget + lastRowRaw - 2).Value = rawDataSheet.Range("A2", "M" & lastRowRaw).Value
                 End If
 
                 'Increment day
@@ -154,9 +160,9 @@ Private Sub importOURData(dasgipRawDataFileName)
                     dd = "01"
                     If mm <> "09" Then
                         mm = IIf(mm = "12", "01", CStr("0" & CInt(mm + 1)))
-                    Else If mm = "09" Then
+                    ElseIf mm = "09" Then
                         mm = "10"
-                    Else If mm = "13" Then
+                    ElseIf mm = "13" Then
                         yy = CStr(CInt(yy) + 1)
                         mm = "01"
                     End If
@@ -173,6 +179,8 @@ Private Sub importOURData(dasgipRawDataFileName)
                 rawDataWorkbook.Close SaveChanges:=False
 
             Loop While hasAnotherDataFile = True
+        ElseIf fileNotFound And i=8
+            MsgBox "No OUR data files exists for " & yy & mm & dd
         End If
     Next
 End Sub
