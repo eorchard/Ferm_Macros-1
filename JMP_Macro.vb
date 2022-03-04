@@ -125,16 +125,6 @@ Private Sub addVesselColumn(vessel, vesselNumber, rawDataWorkbook, targetWorkboo
     
     ActiveWindow.ScrollRow = 1
     
-    If Range(columnFermenter & rowFirst).Value <> "Vessel" Then
-        Range(columnFermenter & rowFirst).EntireColumn.Insert
-        Range(columnFermenter & rowFirst).Value = "Vessel"
-    End If
-    
-    If Range(columnStrainID & rowFirst).Value <> "Strain ID" Then
-        Range(columnCustomHeader1 & rowFirst).EntireColumn.Insert
-        Range(columnStrainID & rowFirst).Value = "Strain ID"
-    End If
-    
     'Name custom headers
     With targetWorkbook.Worksheets("Data1")
         .Range(columnCustomHeader1 & rowFirst).Value = customHeader1
@@ -206,32 +196,41 @@ End Function
  
 'Sub removes timepoints before inoculation time, populates a new column with name of DG unit
 Private Sub removePreinoculationData(numberOfDataSheets, fermenterName, rawDataWorkbook, targetWorkbook, columnDuration, columnFermenter, columnStrainIDInput, columnStrainID, _
-        columnCustomHeader1Input, columnCustomHeader2Input, columnCustomHeader1, columnCustomHeader2, columnFPV, rowHeader, rowDataStart)
+        columnCustomHeader1Input, columnCustomHeader2Input, columnCustomHeader1, columnCustomHeader2, columnFPV, rowHeader, rowDataStart, is30L)
+
+    If is30L Then
+        targetWorkbook.Sheets("Data1").Select
+        Columns("W:W").Select
+        Selection.End(xlDown).Select
+        Range("A2:A" & ActiveCell.Row - 1).EntireRow.Delete
+        Call addVesselColumn(fermenterName, 0, rawDataWorkbook, targetWorkbook, columnDuration, columnFermenter, columnStrainIDInput, columnStrainID, _
+            columnCustomHeader1Input, columnCustomHeader2Input, columnCustomHeader1, columnCustomHeader2, rowHeader, rowDataStart)
+    Else
     
-    For i = 1 To numberOfDataSheets
-        Sheets("Data" & i).Select
-       
-        'Need this condition to check if Data Sheet # matches actual vessel since the vessels aren't always run in sequence
-        If Range(columnFPV & rowHeader).Value Like "*" & i & "*" Then
-            Columns("C:C").Select
-            Selection.End(xlDown).Select
-            Range("A2:A" & ActiveCell.Row - 1).EntireRow.Delete
-            Call addVesselColumn(fermenterName, i, rawDataWorkbook, targetWorkbook, columnDuration, columnFermenter, columnStrainIDInput, columnStrainID, _
-        columnCustomHeader1Input, columnCustomHeader2Input, columnCustomHeader1, columnCustomHeader2, rowHeader, rowDataStart)
-           
-        'If vessel doesn't match up with Data Sheet #, compare the other numbers
-        Else
-            For j = 1 To 8
-                If Range(columnFPV & rowHeader).Value Like "*" & j & "*" Then
-                    Columns("C:C").Select
-                    Selection.End(xlDown).Select
-                    Range("A2:A" & ActiveCell.Row - 1).EntireRow.Delete
-                    Call addVesselColumn(fermenterName, j, rawDataWorkbook, targetWorkbook, columnDuration, columnFermenter, columnStrainIDInput, columnStrainID, _
-        columnCustomHeader1Input, columnCustomHeader2Input, columnCustomHeader1, columnCustomHeader2, rowHeader, rowDataStart)
-                End If
-            Next
-        End If
-     Next
+        For i = 1 To numberOfDataSheets
+            Sheets("Data" & i).Select
+            'Need this condition to check if Data Sheet # matches actual vessel since the vessels aren't always run in sequence
+            If Range(columnFPV & rowHeader).Value Like "*" & i & "*" Then
+                Columns("C:C").Select
+                Selection.End(xlDown).Select
+                Range("A2:A" & ActiveCell.Row - 1).EntireRow.Delete
+                Call addVesselColumn(fermenterName, i, rawDataWorkbook, targetWorkbook, columnDuration, columnFermenter, columnStrainIDInput, columnStrainID, _
+                    columnCustomHeader1Input, columnCustomHeader2Input, columnCustomHeader1, columnCustomHeader2, rowHeader, rowDataStart)
+            
+            'If vessel doesn't match up with Data Sheet #, compare the other numbers
+            Else
+                For j = 1 To 8
+                    If Range(columnFPV & rowHeader).Value Like "*" & j & "*" Then
+                        Columns("C:C").Select
+                        Selection.End(xlDown).Select
+                        Range("A2:A" & ActiveCell.Row - 1).EntireRow.Delete
+                        Call addVesselColumn(fermenterName, j, rawDataWorkbook, targetWorkbook, columnDuration, columnFermenter, columnStrainIDInput, columnStrainID, _
+                            columnCustomHeader1Input, columnCustomHeader2Input, columnCustomHeader1, columnCustomHeader2, rowHeader, rowDataStart)
+                    End If
+                Next
+            End If
+        Next
+    End If
 End Sub
  
 'Sub will consolidate data onto one sheet
@@ -301,12 +300,6 @@ Private Sub importOURData(rawDataFileName, columnOURTime, columnCER, columnTimes
         vesselIDRegExp.Pattern = "raw data\\.*DG\d"
         Set dasgipIDPattern = vesselIDRegExp.Execute(rawDataFileName)
         dasgipID = Right(dasgipIDPattern(0), 1)
-    'Else
-        'Find the 30L file using pattern matching, file must belong in a folder called 'raw data'
-        'Example filename: 220201_688_Cascades
-     '  vesselIDRegExp.Pattern = "raw data\\\d*_\d{3}_" & fermenterName
-     '  Set dasgipIDPattern = vesselIDRegExp.Execute(rawDataFileName)
-     '  dasgipID = Right(dasgipIDPattern(0), 1)
     End If
     
     'Copy paste data from each OUR file into sheet tab (OUR1, OUR2, etc..)
@@ -495,7 +488,7 @@ Private Sub import2LRawData(columnAr As String, columnCER, columnCO2, columnCust
    
     'Remove timepoints before inoculation from raw data
     Call removePreinoculationData(numberOfDataSheets, DG_Unit, rawDataWorkbook, targetWorkbook, columnDuration, columnFermenter, columnStrainIDInput, columnStrainID, _
-        columnCustomHeader1Input, columnCustomHeader2Input, columnCustomHeader1, columnCustomHeader2, columnFPV, rowHeader, rowDataStart)
+        columnCustomHeader1Input, columnCustomHeader2Input, columnCustomHeader1, columnCustomHeader2, columnFPV, rowHeader, rowDataStart, is30L)
    
     'Copy data from DG raw files to JMP Macro
     For i = 1 To numberOfDataSheets
@@ -581,8 +574,8 @@ Private Sub import2LRawData(columnAr As String, columnCER, columnCO2, columnCust
         Call fillColumnFromAbove(lastRow, columnFPV, columnTPV, columnVPV, columnXCO2, columnXO2)
         
         'Fix data types that tend to revert
-        Range(columnCustomHeader1 & rowDataStart & ":" & columnCustomHeader2 & lastRow).NumberFormat = "General"
-        Range(columnN2 & rowDataStart & ":" & columnN2 & lastRow).NumberFormat = "General"
+        Range(columnCustomHeader1 & ":" & columnCustomHeader2).NumberFormat = "General"
+        Range(columnN2 & ":" & columnN2).NumberFormat = "General"
         
         'Final step is to remove all excess data
         For i = 11 To lastRow
@@ -610,7 +603,7 @@ End Sub
 
 'Function imports raw data file from Sartorius fermenters
 Private Sub import30LRawData(columnAr, columnCER, columnCO2, columnCustom1, columnCustom2, columnCustomHeader1, columnCustomHeader2, columnCustomHeader1Input, columnCustomHeader2Input, _
-            columnDuration, columnFermenter, columnFPV, columnInoculationTime, columnInoculationTimeInput, columnN2, columnNumberOfSpikes, columnO2, columnOUR, columnOURTime, columnRQ, columnStrainID, _
+            columnDuration, columnFermenter, columnFPV, columnInoculationTime, columnInoculationTimeInput, columnN2, columnNumberOfSpikes, columnO2PV, columnOUR, columnOURTime, columnRQ, columnStirr, columnStrainID, _
             columnStrainIDInput, columnTimestamp, columnTPV, columnVAPV, columnVPV, columnXCO2, columnXO2, columnPHSP, columnPHPV, columnO2SP, columnPressure, _
             columnVBPV, columnBaseTValue, columnTSP, columnAFOMT, rowHeader, rowDataStart, columnAlerts, is30L)
     Dim filter As String, fermenterName As String, rowInoculationTime As String
@@ -673,7 +666,6 @@ Private Sub import30LRawData(columnAr, columnCER, columnCO2, columnCustom1, colu
         'When no more data files exist, round all the OUR timepoints to nearest fifth minute. Makes time synchronization easier
         timeArray = .Range(columnTimestamp & rowDataStart & ":" & columnTimestamp & lastRow).Value
         
-        '###Try to the rounding working so I can match timepoints and custom InoculationTime
         For j = 1 To UBound(timeArray, 1)
             timeArray(j, 1) = "=MROUND(""" & timeArray(j, 1) & """, ""0:01"")"
         Next
@@ -683,49 +675,62 @@ Private Sub import30LRawData(columnAr, columnCER, columnCO2, columnCustom1, colu
 
     'Match timepoints on raw data when the fermenter was inoculated
     For j = 2 To lastRow
-        If targetWorkbook.Worksheets(1).Cells(rowInoculationTime, columnInoculationTimeInput).Value = targetWorkbook.Worksheets("Data1").Cells(j, 1).Value Then
-            'Matched timepoints
+        If CStr(targetWorkbook.Worksheets(1).Cells(rowInoculationTime, columnInoculationTimeInput).Value) = CStr(targetWorkbook.Worksheets("Data1").Cells(j, 1).Value) Then
+            'Matched timepoints, fill down inoculation time starting from 0:00 in 1-minute increments
             With targetWorkbook.Worksheets("Data1")
                 .Range(columnInoculationTime & j).Value = "0:00"
                 For k = j To lastRow - 1
                     .Range(columnInoculationTime & k + 1).Value = DateAdd("n", 1, .Range(columnInoculationTime & k).Value)
                 Next
             End With
+            Exit For
         End If
     Next
-
-    '### Change to removePreinoculationData once inoculation time feature is added
-    'Remove timepoints before inoculation from raw data
-    'Call removePreinoculationData(1, DG_Unit, rawDataWorkbook, targetWorkbook, columnDuration, columnFermenter, columnStrainIDInput, columnStrainID, _
-        'columnCustomHeader1Input, columnCustomHeader2Input, columnCustomHeader1, columnCustomHeader2, columnFPV, rowHeader, rowDataStart)
-     
-     Call addVesselColumn(fermenterName, 0, rawDataWorkbook, targetWorkbook, columnDuration, columnFermenter, columnStrainIDInput, columnStrainID, _
-        columnCustomHeader1Input, columnCustomHeader2Input, columnCustomHeader1, columnCustomHeader2, rowHeader, rowDataStart)
-    '###
-        
     
-     With targetSheet
-         'Import data
-         .Range(columnTimestamp & rowDataStart, columnCustomHeader2 & lastRow).Value = rawDataSheet.Range(columnTimestamp & rowDataStart, columnCustomHeader2 & lastRow).Value
+    'Check if raw column headers match what is expected, otherwise throw an error
+    If rawDataSheet.Range(columnFPV & rowHeader).Value <> "AIR_SP_Value" Or _
+        rawDataSheet.Range(columnXO2 & rowHeader).Value <> "O2_SP_Value" Or _
+        rawDataSheet.Range(columnPHSP & rowHeader).Value <> "pH_Setpoint" Or _
+        rawDataSheet.Range(columnPHPV & rowHeader).Value <> "pH_Value" Or _
+        rawDataSheet.Range(columnO2SP & rowHeader).Value <> "pO2_Setpoint" Or _
+        rawDataSheet.Range(columnO2PV & rowHeader).Value <> "pO2_Value" Or _
+        rawDataSheet.Range(columnPressure & rowHeader).Value <> "PRESS_Value" Or _
+        rawDataSheet.Range(columnStirr & rowHeader).Value <> "STIRR_Value" Or _
+        rawDataSheet.Range(columnBaseTValue & rowHeader).Value <> "BASET_Value" Or _
+        rawDataSheet.Range(columnTPV & rowHeader).Value <> "TEMP_Value" Or _
+        rawDataSheet.Range(columnTSP & rowHeader).Value <> "TEMP_Setpoint" Or _
+        rawDataSheet.Range(columnAFOMT & rowHeader).Value <> "AFOMT_Value" Then
+        MsgBox "30L/100L column headers don't match the expected format, please see the expected order of columns"
+        End
+    End If
+    
+    With targetSheet
+        'Import data
+        .Range(columnTimestamp & rowDataStart, columnCustomHeader2 & lastRow).Value = rawDataSheet.Range(columnTimestamp & rowDataStart, columnCustomHeader2 & lastRow).Value
          
-         If .Range(columnTimestamp & rowDataStart).Value <> "" Then
-             'Round each timepoint, makes time synchronization easier
-             timeArray = .Range(columnTimestamp & rowDataStart & ":" & columnCustomHeader2 & lastRow).Value
+        If .Range(columnTimestamp & rowDataStart).Value <> "" Then
+            'Round each timepoint, makes time synchronization easier
+            timeArray = .Range(columnTimestamp & rowDataStart & ":" & columnCustomHeader2 & lastRow).Value
          
-             For j = 1 To UBound(timeArray, 1)
-                 timeArray(j, 1) = "=MROUND(""" & timeArray(j, 1) & """, ""0:01"")"
-             Next
+            For j = 1 To UBound(timeArray, 1)
+                timeArray(j, 1) = "=MROUND(""" & timeArray(j, 1) & """, ""0:01"")"
+            Next
            
-             .Range(columnTimestamp & rowDataStart & ":" & columnTimestamp & lastRow).Value = timeArray
+            .Range(columnTimestamp & rowDataStart & ":" & columnTimestamp & lastRow).Value = timeArray
             
-             'Get number of DO spikes
-             numberOfSpikes = countDOSpikes(lastRow, rawDataSheet, columnVAPV, rowDataStart)
-             targetSheet.Range(columnNumberOfSpikes & rowDataStart & ":" & columnNumberOfSpikes & lastRow).Value = numberOfSpikes
-         End If
-     End With
-   
-    'Close raw data file
-    rawDataWorkbook.Close SaveChanges:=False
+            'Get number of DO spikes
+            numberOfSpikes = countDOSpikes(lastRow, rawDataSheet, columnVAPV, rowDataStart)
+            targetSheet.Range(columnNumberOfSpikes & rowDataStart & ":" & columnNumberOfSpikes & lastRow).Value = numberOfSpikes
+        End If
+     
+        'Close raw data file
+        rawDataWorkbook.Close SaveChanges:=False
+         
+        'Remove timepoints before inoculation from raw data
+        Call removePreinoculationData(1, fermenterName, rawDataWorkbook, targetWorkbook, columnDuration, columnFermenter, columnStrainIDInput, columnStrainID, _
+            columnCustomHeader1Input, columnCustomHeader2Input, columnCustomHeader1, columnCustomHeader2, columnFPV, rowHeader, rowDataStart, is30L)
+        
+    End With
    
     'Import OUR data if selected
     'answer = MsgBox("Would you like to import OUR data? (This may take a few minutes.)", vbYesNo)
@@ -797,7 +802,7 @@ End Sub
 Sub Run_JMP_Macro(is30L)
     Dim columnAFOMT As String, columnAr As String, columnBaseTValue As String, columnCER As String, columnCO2 As String, columnCustom1 As String, columnCustom2 As String, _
         columnCustomHeader1 As String, columnCustomHeader2 As String, columnCustomHeader1Input As String, columnCustomHeader2Input As String, _
-        columnDuration As String, columnFermenter As String, columnFPV As String, columnInoculationTime As String, columnO2 As String, columnO2SP As String, columnN2 As String, columnNPV As String, _
+        columnDuration As String, columnFermenter As String, columnFPV As String, columnInoculationTime As String, columnO2 As String, columnO2SP As String, columnO2PV As String, columnN2 As String, columnNPV As String, _
         columnNumberOfSpikes As String, columnOUR As String, columnOURTime As String, columnPressure As String, columnRQ As String, columnStrainID As String, columnStrainIDInput As String, _
         columnTimestamp As String, columnTPV As String, columnVAPV As String, columnVPV As String, columnXCO2 As String, columnXO2 As String
     Dim rowHeader As Integer, rowDataStart As Integer
@@ -845,8 +850,9 @@ Sub Run_JMP_Macro(is30L)
         columnPHSP = "F"
         columnPHPV = "G"
         columnO2SP = "H"
-        columnO2 = "I"
+        columnO2PV = "I"
         columnPressure = "J"
+        columnStirr = "K"
         columnVAPV = "M"
         columnVBPV = "N"
         columnBaseTValue = "O"
@@ -910,13 +916,13 @@ Sub Run_JMP_Macro(is30L)
     Else
         'Initialize 30L headers
         Worksheets("Data1").Range("A1:" & columnRQ & "1").Value = Array( _
-            "PDatTime", "Age", "Vessel", "AIR_SP Value", "O2_SP Value", "pH Setpoint", "pH Value", "pO2 Setpoint", "pO2 Value", "Pressure Value", "STIRR Value", "SUBS_A Value", _
-            "SUBST_A Value", "Vweight Value", "BASET Value", "Temp Value", "Temp Setpoint", "AFOMT Value", "Strain ID", "Custom 1", "Custom 2", _
+            "PDatTime", "Age", "Vessel", "AIR_SP_Value", "O2_SP_Value", "pH_Setpoint", "pH_Value", "pO2_Setpoint", "pO2_Value", "PRESS_Value", "STIRR_Value", "SUBS_A_Value", _
+            "SUBST_A_Value", "VWEIGHT_Value", "BASET_Value", "TEMP_Value", "TEMP_Setpoint", "AFOMT_Value", "Strain ID", "Custom 1", "Custom 2", _
             "Number of Spikes", "Inoculation Time", "Time", "N2", "O2", "Ar", "CO2", "RMS Flow", "CDC", "OXQ", "RQ", "mass28", "mass32", "mass40", "mass44", "OUR", "CER", "RQ")
             
         'Import 30L raw data file
         Call import30LRawData(columnAr, columnCER, columnCO2, columnCustom1, columnCustom2, columnCustomHeader1, columnCustomHeader2, columnCustomHeader1Input, columnCustomHeader2Input, _
-            columnDuration, columnFermenter, columnFPV, columnInoculationTime, columnInoculationTimeInput, columnN2, columnNumberOfSpikes, columnO2, columnOUR, columnOURTime, columnRQ, columnStrainID, _
+            columnDuration, columnFermenter, columnFPV, columnInoculationTime, columnInoculationTimeInput, columnN2, columnNumberOfSpikes, columnO2PV, columnOUR, columnOURTime, columnRQ, columnStirr, columnStrainID, _
             columnStrainIDInput, columnTimestamp, columnTPV, columnVAPV, columnVPV, columnXCO2, columnXO2, columnPHSP, columnPHPV, columnO2SP, columnPressure, _
             columnVBPV, columnBaseTValue, columnTSP, columnAFOMT, rowHeader, rowDataStart, columnAlerts, is30L)
     End If
@@ -940,3 +946,4 @@ Sub Run_JMP_Macro_2L()
     
     Call Run_JMP_Macro(is30L)
 End Sub
+
