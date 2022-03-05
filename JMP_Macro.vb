@@ -98,7 +98,7 @@ Private Sub addVesselColumn(vessel, vesselNumber, rawDataWorkbook, targetWorkboo
             rowOffset = 8
         ElseIf vessel = "DG5_u" Then
             rowOffset = 16
-        ElseIf vessel = "Appalachian" Then
+        ElseIf vessel = "Alps" Then
             rowOffset = 25
         ElseIf vessel = "Brooks" Then
             rowOffset = 26
@@ -276,12 +276,12 @@ End Sub
 Private Sub importOURData(rawDataFileName, columnOURTime, columnCER, columnTimestamp, rowHeader, rowDataStart, is30L, Optional ByVal fermenterName)
     Dim rawDataWorkbook As Workbook, targetWorkbook As Workbook
     Dim rawDataSheet As Worksheet, targetSheet As Worksheet
-    Dim yy As String, mm As String, dd As String, ddOriginal As String, filter As String, fileFound As String, vesselID As String, lastColumnOUR As String
+    Dim yy As String, mm As String, dd As String, ddOriginal As String, filter As String, fileFound As String, vesselID As String, lastColumnOUR As String, prefix30L As String
     Dim numberOfDaysPerMonthArray As Variant
     Dim lastRowTarget As Integer, lastRowRaw As Integer, lastRowOUR As Integer, matchedRowNumberOUR As Integer, matchedRowNumberFermenter As Integer, _
         dasgipID As Integer
     Dim hasAnotherDataFile As Boolean, hasExistingData As Boolean, exitFor As Boolean
-    Dim datePattern As Object, datePatternRegExp As Object, dasgipIDPattern As Object, vesselIDRegExp As Object
+    Dim datePattern As Object, datePatternRegExp As Object, vesselIDPattern As Object, vesselIDRegExp As Object
     Dim firstTimeToMatch As Double
     
     numberOfDaysPerMonthArray = Array(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
@@ -308,11 +308,25 @@ Private Sub importOURData(rawDataFileName, columnOURTime, columnCER, columnTimes
         'Pattern must include "raw data\" to exclude false matches from the batch ID
         'Example filename: 220202DG5 raw process data
         vesselIDRegExp.Pattern = "raw data\\.*DG\d"
-        Set dasgipIDPattern = vesselIDRegExp.Execute(rawDataFileName)
-        dasgipID = Right(dasgipIDPattern(0), 1)
-    Else
-        
+        Set vesselIDPattern = vesselIDRegExp.Execute(rawDataFileName)
+        dasgipID = Right(vesselIDPattern(0), 1)
     End If
+    
+    'Assign correct prefix to Sartorius vessels to correctly access OUR raw data
+    If fermenterName = "Alps" Then
+        prefix30L = 5
+    ElseIf fermenterName = "Brooks" Then
+        prefix30L = 6
+    ElseIf fermenterName = "Cascades" Then
+        prefix30L = 3
+    ElseIf fermenterName = "Dolomites" Then
+        prefix30L = 4
+    ElseIf fermenterName = "Elk" Then
+        prefix30L = 1
+    ElseIf fermenterName = "Himalayas" Then
+        prefix30L = 2
+    End If
+        
     
     'Copy paste data from each OUR file into sheet tab (OUR1, OUR2, etc..)
     For i = 1 To 8
@@ -325,7 +339,7 @@ Private Sub importOURData(rawDataFileName, columnOURTime, columnCER, columnTimes
             Set targetSheet = targetWorkbook.Worksheets("OUR" & vesselID)
         ElseIf is30L Then
             vesselID = 1
-            fileFound = Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\20" & yy & "\" & "30L - 3" & "\analysis\" & mm & dd & "*.csv")
+            fileFound = Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\20" & yy & "\" & "30L - " & prefix30L & "\analysis\" & mm & dd & "*.csv")
             Set targetSheet = targetWorkbook.Worksheets("OUR1")
         End If
             
@@ -336,8 +350,7 @@ Private Sub importOURData(rawDataFileName, columnOURTime, columnCER, columnTimes
             'Collect OUR data for individual vessel until no more sequential data files exist
             Do
                 If is30L Then
-                    Set rawDataWorkbook = Application.Workbooks.Open("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\20" & yy & "\" & _
-                        "30L - 3" & "\analysis\" & mm & dd & "*.csv")
+                    Set rawDataWorkbook = Application.Workbooks.Open("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\20" & yy & "\" & "30L - " & prefix30L & "\analysis\" & mm & dd & "*.csv")
                 Else
                     Set rawDataWorkbook = Application.Workbooks.Open("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\20" & yy & "\" & dasgipID & _
                       "-" & vesselID & "\analysis\" & mm & dd & "*.csv")
@@ -381,9 +394,8 @@ Private Sub importOURData(rawDataFileName, columnOURTime, columnCER, columnTimes
                 End If
 
                 'Check if an OUR data file for the next day exists
-                fileFound = IIf(is30L, Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\20" & yy & "\" & "30L - 3" _
-                & "\analysis\" & mm & dd & "*.csv"), Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\20" & yy & "\" & dasgipID & _
-                    "-" & vesselID & "\analysis\" & mm & dd & "*.csv"))
+                fileFound = IIf(is30L, Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\20" & yy & "\" & "30L - " & prefix30L & "\analysis\" & mm & dd & "*.csv"), _
+                    Dir("S:\Projects\Fermentation\Ferm&StrainDevelopment\OUR Data\20" & yy & "\" & dasgipID & "-" & vesselID & "\analysis\" & mm & dd & "*.csv"))
                 hasAnotherDataFile = IIf(fileFound <> "", True, False)
 
                 'Set dd and mm back to normal when all unit's data files are scraped
@@ -644,8 +656,8 @@ Private Sub import30LRawData(columnAr, columnCER, columnCO2, columnCustom1, colu
    
     With rawDataWorkbook
     'Identify which fermenter the raw data is coming from, currently relies on filename
-        If .Name Like "*" & "Appalachian" & "*" Then
-            fermenterName = "Appalachian"
+        If .Name Like "*" & "Alps" & "*" Then
+            fermenterName = "Alps"
             rowInoculationTime = 28
         ElseIf .Name Like "*" & "Brooks" & "*" Then
             fermenterName = "Brooks"
@@ -663,7 +675,7 @@ Private Sub import30LRawData(columnAr, columnCER, columnCO2, columnCustom1, colu
             fermenterName = "Himalayas"
             rowInoculationTime = 33
         Else
-            MsgBox "Filename not valid, filename needs to include: 'Appalachian' 'Brooks' 'Cascades' 'Dolomites' 'Elk' or 'Himalayas'"
+            MsgBox "Filename not valid, filename needs to include: 'Alps' 'Brooks' 'Cascades' 'Dolomites' 'Elk' or 'Himalayas'"
             End
         End If
         
@@ -751,9 +763,9 @@ Private Sub import30LRawData(columnAr, columnCER, columnCO2, columnCustom1, colu
     End With
    
     'Future enhancement where to import 30/100L OUR data. Currently disabled
-    'answer = MsgBox("Would you like to import OUR data? (This may take a few minutes.)", vbYesNo)
-    'importOUR = IIf(answer = 6, True, False)
-    importOUR = False
+    answer = MsgBox("Would you like to import OUR data? (This may take a few minutes.)", vbYesNo)
+    importOUR = IIf(answer = 6, True, False)
+    'importOUR = False
     
     If importOUR Then
         Call importOURData(rawDataFileName, columnOURTime, columnCER, columnTimestamp, rowHeader, rowDataStart, is30L, fermenterName)
@@ -964,3 +976,4 @@ Sub Run_JMP_Macro_2L()
     
     Call Run_JMP_Macro(is30L)
 End Sub
+
