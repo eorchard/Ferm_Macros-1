@@ -125,6 +125,16 @@ Private Sub addVesselColumn(vessel, vesselNumber, rawDataWorkbook, targetWorkboo
     
     ActiveWindow.ScrollRow = 1
     
+    If Range(columnFermenter & rowFirst).Value <> "Vessel" Then
+        Range(columnFermenter & rowFirst).EntireColumn.Insert
+        Range(columnFermenter & rowFirst).Value = "Vessel"
+    End If
+
+    If Range(columnStrainID & rowFirst).Value <> "Strain ID" Then
+        Range(columnCustomHeader1 & rowFirst).EntireColumn.Insert
+        Range(columnStrainID & rowFirst).Value = "Strain ID"
+    End If
+    
     'Name custom headers
     With targetWorkbook.Worksheets("Data1")
         .Range(columnCustomHeader1 & rowFirst).Value = customHeader1
@@ -300,6 +310,8 @@ Private Sub importOURData(rawDataFileName, columnOURTime, columnCER, columnTimes
         vesselIDRegExp.Pattern = "raw data\\.*DG\d"
         Set dasgipIDPattern = vesselIDRegExp.Execute(rawDataFileName)
         dasgipID = Right(dasgipIDPattern(0), 1)
+    Else
+        
     End If
     
     'Copy paste data from each OUR file into sheet tab (OUR1, OUR2, etc..)
@@ -654,8 +666,14 @@ Private Sub import30LRawData(columnAr, columnCER, columnCO2, columnCustom1, colu
             MsgBox "Filename not valid, filename needs to include: 'Appalachian' 'Brooks' 'Cascades' 'Dolomites' 'Elk' or 'Himalayas'"
             End
         End If
+        
+        'Add vessel column so raw data sheet matches the target sheet
+        If rawDataSheet.Range(columnFermenter & rowHeader).Value <> "Vessel" Then
+            rawDataSheet.Range(columnFermenter & rowHeader).EntireColumn.Insert
+            rawDataSheet.Range(columnFermenter & rowHeader).Value = "Vessel"
+        End If
     End With
-   
+
      'Identify last row in order to extract the correct range
         lastRow = rawDataSheet.Range(columnTimestamp & Rows.Count).End(xlUp).Row
 
@@ -732,7 +750,7 @@ Private Sub import30LRawData(columnAr, columnCER, columnCO2, columnCustom1, colu
         
     End With
    
-    'Import OUR data if selected
+    'Future enhancement where to import 30/100L OUR data. Currently disabled
     'answer = MsgBox("Would you like to import OUR data? (This may take a few minutes.)", vbYesNo)
     'importOUR = IIf(answer = 6, True, False)
     importOUR = False
@@ -946,4 +964,3 @@ Sub Run_JMP_Macro_2L()
     
     Call Run_JMP_Macro(is30L)
 End Sub
-
